@@ -512,6 +512,8 @@ Adjust SNO instance networking. By default dry-run is ON ! You must set -d to do
         -b     BASE_DOMAIN - openshift base domain (or export BASE_DOMAIN env var)
         -c     CLUSTER_NAME - openshift cluster name (or export CLUSTER_NAME env var)
 
+This script is rerunnable if it fails.
+
 Environment Variables:
     Export these in your environment.
 
