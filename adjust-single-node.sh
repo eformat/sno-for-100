@@ -21,7 +21,8 @@ public_hosted_zone=
 private_hosted_zone=
 private_instance_ip=
 nat_gateways=
-load_balancers=
+network_load_balancers=
+router_load_balancer=
 
 find_region() {
     if [ ! -z "$AWS_REGION" ]; then 
@@ -434,24 +435,24 @@ release_eips() {
     fi
 }
 
-find_load_balancers() {
-    load_balancers=$(aws elbv2 describe-load-balancers --region=${region} \
+find_network_load_balancers() {
+    network_load_balancers=$(aws elbv2 describe-load-balancers --region=${region} \
     --query="LoadBalancers[].LoadBalancerArn" \
     --output text)
-    if [ -z "$load_balancers" ]; then
+    if [ -z "$network_load_balancers" ]; then
         echo -e "💀${ORANGE}Warning - could not find load balancers - continuing, they may have been deleted already ?${NC}"
     else
-        echo "🌴 LoadBalancers set to $load_balancers"
+        echo "🌴 NetworkLoadBalancers set to $network_load_balancers"
     fi
 }
 
-delete_load_balancers() {
+delete_network_load_balancers() {
     if [ -z "$DRYRUN" ]; then
         echo -e "${GREEN}Ignoring - delete_load_balancers - dry run set${NC}"
         return
     fi
-    if [ ! -z "$load_balancers" ]; then
-        for x in $load_balancers; do
+    if [ ! -z "$network_load_balancers" ]; then
+        for x in $network_load_balancers; do
             aws elbv2 delete-load-balancer \
             --region=${region} \
             --load-balancer-arn $x
@@ -463,6 +464,78 @@ delete_load_balancers() {
             fi
         done
     fi
+}
+
+find_router_lb() {
+    router_load_balancer=$(aws elb describe-load-balancers \
+    --region=${region} \
+    --query="LoadBalancerDescriptions[].Instances" \
+    --output text)
+    if [ -z "$router_load_balancer" ]; then
+        echo -e "🕱${RED}Warning - could not find router load balancer ?${NC}"
+    else
+        echo "🌴 RouterLoadBalancer set to $router_load_balancer"
+    fi
+}
+
+associate_router_eip() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring -associate_router_eip - dry run set${NC}"
+        return
+    fi
+    if [ ! -z "$router_load_balancers" ]; then
+        aws elb register-instances-with-load-balancer \
+        --load-balancer-name $router_load_balancer \
+        --instances $instance_id \
+        --region=${region}
+        if [ "$?" != 0 ]; then
+            echo -e "🕱${RED}Failed - could not associate router lb  $router_load_balancer with instance $instance_id ?${NC}"
+            exit 1
+        else
+            echo -e "${GREEN} -> associate_router_eip [ $router_load_balancer, $instance_id ] OK${NC}"
+        fi
+    fi
+}
+
+restart_instance() {
+    set -o pipefail
+    aws ec2 stop-instances \
+    ${DRYRUN:---dry-run} \
+    --region=${region} \
+    --instance-ids=$instance_id 2>&1 | tee /tmp/aws-error-file
+    if [ "$?" != 0 ]; then
+        if egrep -q "DryRunOperation" /tmp/aws-error-file; then
+            echo -e "${GREEN}Ignoring - restart_instance stop instance - dry run set${NC}"
+        else
+            echo -e "🕱${RED}Failed - could not stop $instance_id ?${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${GREEN} -> restart_instance stopping [ $instance_id ] OK${NC}"
+    fi
+
+    echo -e "${GREEN} -> wait instance-stopped ... [ $instance_id ]${NC}"
+    aws ec2 wait instance-stopped \
+    ${DRYRUN:---dry-run} \
+    --region=${region} \
+    --instance-ids $instance_id
+    echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
+
+    aws ec2 start-instances \
+    ${DRYRUN:---dry-run} \
+    --region=${region} \
+    --instance-ids=$instance_id 2>&1 | tee /tmp/aws-error-file
+    if [ "$?" != 0 ]; then
+        if egrep -q "DryRunOperation" /tmp/aws-error-file; then
+            echo -e "${GREEN}Ignoring - restart_instance start instance - dry run set${NC}"
+        else
+            echo -e "🕱${RED}Failed - could not start $instance_id ?${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${GREEN} -> restart_instance starting [ $instance_id ] OK${NC}"
+    fi
+    set +o pipefail
 }
 
 # fixme
@@ -500,8 +573,13 @@ all() {
     delete_nat_gateways
     release_eips "$CLUSTER_NAME-*-eip-*"
 
-    find_load_balancers
-    delete_load_balancers
+    find_network_load_balancers
+    delete_network_load_balancers
+
+    find_router_lb
+    associate_router_eip
+
+    restart_instance
 }
 
 usage() {

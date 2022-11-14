@@ -20,6 +20,7 @@
 3. Export Env.Vars
 
     ```bash
+    export AWS_PROFILE=rhpds
     export BASE_DOMAIN=sandbox1272.opentlc.com
     export CLUSTER_NAME=hivec
     ```
@@ -42,7 +43,7 @@
 
 6. Adjust AWS Objects
 
-    Dry run (no changes, just perform lookups)
+    Dry run (no changes, just perform lookups). Do this first to check, as the script may be over select.
 
     ```bash
     ./adjust-single-node.sh
