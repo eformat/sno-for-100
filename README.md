@@ -5,7 +5,14 @@ Prerequisites:
 - [AWS command line](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - [AWS account login](https://aws.amazon.com/console/)
 - [OpenShift pull secret](https://cloud.redhat.com/openshift/install/pull-secret)
-- [OpenShift command line](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/)
+- [OpenShift command line and installer](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/)
+- [ec2-spot-converter script](https://pythonawesome.com/a-tool-to-convert-aws-ec2-instances-back-and-forth-between-on-demand/)
+
+```bash
+TOOL_VERSION=`curl https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/VERSION.txt`
+curl https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/releases/ec2-spot-converter-${TOOL_VERSION} -o ec2-spot-converter
+chmod u+x ec2-spot-converter
+```
 
 ## Install and Adjust the SNO instance
 
