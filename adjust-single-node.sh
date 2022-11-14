@@ -439,7 +439,7 @@ find_load_balancers() {
     --query="LoadBalancers[].LoadBalancerArn" \
     --output text)
     if [ -z "$load_balancers" ]; then
-        echo -e "💀${ORANGE}Warning - could not find load balancers for tag: $tag_value in vpc $vpcid - continuing, they may have been deleted already ?${NC}"
+        echo -e "💀${ORANGE}Warning - could not find load balancers - continuing, they may have been deleted already ?${NC}"
     else
         echo "🌴 LoadBalancers set to $load_balancers"
     fi
