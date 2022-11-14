@@ -333,7 +333,7 @@ update_route53_private() {
         echo -e "${GREEN}Ignoring - update_route53_private - dry run set${NC}"
         return
     fi
-    for x in "api-int"; do
+    for x in "api-int" "api"; do
         cat << EOF > /tmp/route53_policy
         {
             "Changes": [
