@@ -37,14 +37,14 @@ find_region() {
 }
 
 find_instance_id() {
-    local image_id="$1"
+    local tag_value="$1"
     instance_id=$(aws ec2 describe-instances \
     --region=${region} \
     --query "Reservations[].Instances[].InstanceId" \
-    --filters="Name=image-id,Values=$image_id" \
+    --filters "Name=tag-value,Values=$tag_value" \
     --output text)
     if [ -z "$instance_id" ]; then
-        echo -e "🕱${RED}Failed - could not find instance id associated with ami: $image_id ?${NC}"
+        echo -e "🕱${RED}Failed - could not find instance id associated with tag: $tag_value ?${NC}"
         exit 1
     else
         echo "🌴 InstanceId set to $instance_id"
@@ -470,35 +470,35 @@ delete_load_balancers() {
     #aws elbv2 describe-target-groups
 #}
 
-# do it all - fixme does installer create tags like hive does ?!?
+# do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
     echo "🌴 CLUSTER_NAME set to $CLUSTER_NAME"
 
     # find ids
     find_region
-    find_instance_id "ami-026991ec35e2c0b20" # 670309840152/ec2-spot-converter-i-06854ac7117e535c7 - always this ami?
-    find_vpc_id "$CLUSTER_NAME-*-vpc" # fixme - tag value - this must match your sno cluster name?
-    find_master_sg "$CLUSTER_NAME-*-master-sg" # fixme - tag value - this must match your sno cluster name?
+    find_instance_id "$CLUSTER_NAME-*-master-0"
+    find_vpc_id "$CLUSTER_NAME-*-vpc"
+    find_master_sg "$CLUSTER_NAME-*-master-sg"
 
     # updates
     update_master_sg
     find_or_allocate_eip
     associate_eip
     
-    find_public_route_table "$CLUSTER_NAME-*-public" # fixme - tag value - this must match your sno cluster name?
-    find_private_route_tables "$CLUSTER_NAME-*-private-*" # fixme - tag value - this must match your sno cluster name?
+    find_public_route_table "$CLUSTER_NAME-*-public"
+    find_private_route_tables "$CLUSTER_NAME-*-private-*"
     update_private_routes
 
-    find_public_route53_hostedzone "$BASE_DOMAIN" # fixme - domain
-    update_route53_public "$CLUSTER_NAME.$BASE_DOMAIN" # fixme - domain
+    find_public_route53_hostedzone "$BASE_DOMAIN"
+    update_route53_public "$CLUSTER_NAME.$BASE_DOMAIN"
     find_instance_private_ip_address
-    find_private_route53_hostedzone "$CLUSTER_NAME.$BASE_DOMAIN" # fixme - domain
-    update_route53_private "$CLUSTER_NAME.$BASE_DOMAIN" # fixme - domain
+    find_private_route53_hostedzone "$CLUSTER_NAME.$BASE_DOMAIN"
+    update_route53_private "$CLUSTER_NAME.$BASE_DOMAIN"
 
-    find_nat_gateways "$CLUSTER_NAME-*-nat-*" # fixme - tag value - this must match your sno cluster name?
+    find_nat_gateways "$CLUSTER_NAME-*-nat-*"
     delete_nat_gateways
-    release_eips "$CLUSTER_NAME-*-eip-*" # fixme - tag value - this must match your sno cluster name?
+    release_eips "$CLUSTER_NAME-*-eip-*"
 
     find_load_balancers
     delete_load_balancers
