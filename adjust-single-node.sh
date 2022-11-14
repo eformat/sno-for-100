@@ -636,5 +636,5 @@ shift `expr $OPTIND - 1`
 
 all
 
-echo -e "🌻${GREEN}SNO Reconfigured OK.${NC}🌻"
+echo -e "\n🌻${GREEN}AWS SNO Reconfigured OK.${NC}🌻\n"
 exit 0
