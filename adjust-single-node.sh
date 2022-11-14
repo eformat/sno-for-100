@@ -1,5 +1,6 @@
 #!/bin/bash
 # -*- coding: UTF-8 -*-
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 ORANGE='\033[38;5;214m'
@@ -584,9 +585,13 @@ all() {
 
 usage() {
   cat <<EOF 2>&1
-usage: $0 [ -d ]
+usage: $0 [ -d -b <BASE_DOMAIN> -c <CLUSTER_NAME> ]
+
 Adjust SNO instance networking. By default dry-run is ON ! You must set -d to doIt™️
         -d     do it ! no dry run - else we print out whats going to happen and any non desructive lookups
+
+Optional arguments if not set in environment:
+
         -b     BASE_DOMAIN - openshift base domain (or export BASE_DOMAIN env var)
         -c     CLUSTER_NAME - openshift cluster name (or export CLUSTER_NAME env var)
 
@@ -602,13 +607,18 @@ Environment Variables:
         AWS_ACCESS_KEY_ID
         AWS_SECRET_ACCESS_KEY
         AWS_DEFAULT_REGION
+    
+    Optionally if not set on command line:
+
+        BASE_DOMAIN
+        CLUSTER_NAME
 
 EOF
   exit 1
 }
 
-while getopts db:c: a; do
-  case $a in
+while getopts b:c:d opt; do
+  case $opt in
     b)
       BASE_DOMAIN=$OPTARG
       ;;

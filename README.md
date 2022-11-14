@@ -1,5 +1,14 @@
 # sno-for-100
 
+Prerequisites:
+
+- [AWS command line](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
+- [AWS account login](https://aws.amazon.com/console/)
+- [OpenShift pull secret](https://cloud.redhat.com/openshift/install/pull-secret)
+- [OpenShift command line](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/)
+
+## Install and Adjust the SNO instance
+
 1. Create Openshift SNO AWS Config
 
     ```bash
@@ -53,4 +62,29 @@
 
     ```bash
     ./adjust-single-node.sh -d
+    ```
+
+## Fix the internal node instance references
+
+1. Export Env.Vars
+
+    ```bash
+    export AWS_PROFILE=rhpds
+    export BASE_DOMAIN=sandbox1272.opentlc.com
+    export CLUSTER_NAME=hivec
+    export KUBEADMIN_PASSWORD=rQEtP-kZtcM-jzyu8-MfVhX
+    ```
+
+2. Fix internal node instance references
+
+    Dry run (no changes, just perform lookups). Do this first to check.
+
+    ```bash
+    ./fix-instance-id.sh
+    ```
+
+    DoIt !
+
+    ```bash
+    ./fix-instance-id.sh -d
     ```
