@@ -525,9 +525,11 @@ restart_instance() {
     ${DRYRUN:---dry-run} \
     --region=${region} \
     --instance-ids $instance_id
-    echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
 
-    sleep 30
+    if [ ! -z "$DRYRUN" ]; then
+        sleep 120 # fix me spot restart is not elegant
+        echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
+    fi
 
     aws ec2 start-instances \
     ${DRYRUN:---dry-run} \
