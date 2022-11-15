@@ -227,7 +227,7 @@ find_private_route_tables() {
 update_private_routes() {
     set -o pipefail
     if [ ! -z "$private_route_table_ids" ]; then
-         $private_route_table_ids; do
+        for x in $private_route_table_ids; do
             aws ec2 replace-route-table-association \
             ${DRYRUN:---dry-run} \
             --association-id $x \
@@ -525,6 +525,8 @@ restart_instance() {
     --region=${region} \
     --instance-ids $instance_id
     echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
+
+    sleep 30
 
     aws ec2 start-instances \
     ${DRYRUN:---dry-run} \
