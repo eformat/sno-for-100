@@ -43,7 +43,7 @@ find_instance_id() {
     instance_id=$(aws ec2 describe-instances \
     --region=${region} \
     --query "Reservations[].Instances[].InstanceId" \
-    --filters "Name=tag-value,Values=$tag_value" \
+    --filters "Name=tag-value,Values=$tag_value" "Name=instance-state-name,Values=running" \
     --output text)
     if [ -z "$instance_id" ]; then
         echo -e "🕱${RED}Failed - could not find instance id associated with tag: $tag_value ?${NC}"
