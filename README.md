@@ -37,7 +37,7 @@ chmod u+x ec2-spot-converter
 
     ```bash
     export AWS_PROFILE=rhpds
-    export BASE_DOMAIN=sandbox1272.opentlc.com
+    export BASE_DOMAIN=sandbox.opentlc.com
     export CLUSTER_NAME=hivec
     ```
 
@@ -77,7 +77,7 @@ chmod u+x ec2-spot-converter
 
     ```bash
     export AWS_PROFILE=rhpds
-    export BASE_DOMAIN=sandbox1272.opentlc.com
+    export BASE_DOMAIN=sandbox.opentlc.com
     export CLUSTER_NAME=hivec
     export KUBEADMIN_PASSWORD=rQEtP-kZtcM-jzyu8-MfVhX
     ```
