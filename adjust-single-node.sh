@@ -586,10 +586,10 @@ all() {
     find_network_load_balancers
     delete_network_load_balancers
 
+    restart_instance
+
     find_router_lb
     associate_router_eip
-
-    restart_instance
 }
 
 usage() {
