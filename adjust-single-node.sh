@@ -410,14 +410,15 @@ delete_nat_gateways() {
 
 release_eips() {
     local tag_value="$1"
-    read -r ep alloc_id < <(aws ec2 describe-addresses \
+    IFS=$'\n' read -d '' -r -a lines < <(aws ec2 describe-addresses \
     --region=${region} \
     --query "Addresses[].[PublicIp,AllocationId]" \
     --filters "Name=tag-value,Values=$tag_value" \
     --output text)
-    if [ ! -z "$ep" ]; then
+    if [ ! -z "$lines" ]; then
         set -o pipefail
-        for x in $ep; do
+        for line in "${lines[@]}"; do 
+            read -r ip alloc_id <<< "$line"
             aws ec2 release-address \
             ${DRYRUN:---dry-run} \
             --region=${region} \
@@ -430,7 +431,7 @@ release_eips() {
                     exit 1
                 fi
             else
-                echo -e "${GREEN} -> release_eips [ $x ] OK${NC}"
+                echo -e "${GREEN} -> release_eips [ $ip ] OK${NC}"
             fi
         done
         set +o pipefail
