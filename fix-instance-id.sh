@@ -163,6 +163,7 @@ Environment Variables:
 
         BASE_DOMAIN
         CLUSTER_NAME
+        KUBEADMIN_PASSWORD
 
 EOF
   exit 1
