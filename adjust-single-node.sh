@@ -470,10 +470,11 @@ delete_network_load_balancers() {
 find_router_lb() {
     router_load_balancer=$(aws elb describe-load-balancers \
     --region=${region} \
-    --query="LoadBalancerDescriptions[].Instances" \
+    --query="LoadBalancerDescriptions[].LoadBalancerName" \
     --output text)
     if [ -z "$router_load_balancer" ]; then
         echo -e "🕱${RED}Warning - could not find router load balancer ?${NC}"
+        exit 1
     else
         echo "🌴 RouterLoadBalancer set to $router_load_balancer"
     fi
