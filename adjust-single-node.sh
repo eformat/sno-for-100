@@ -385,7 +385,7 @@ find_nat_gateways() {
 delete_nat_gateways() {
     set -o pipefail
     if [ ! -z "$nat_gateways" ]; then
-        for x in "$nat_gateways"; do
+        for x in $nat_gateways; do
             aws ec2 delete-nat-gateway \
             ${DRYRUN:---dry-run} \
             --nat-gateway-id $x \
