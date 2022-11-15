@@ -59,7 +59,7 @@ chmod u+x ec2-spot-converter
 
 6. Adjust AWS Objects
 
-    Dry run (no changes, just perform lookups). Do this first to check, as the script may be over select.
+    Dry run (no changes, just perform lookups). Do this first to check output, as the script may over select.
 
     ```bash
     ./adjust-single-node.sh
