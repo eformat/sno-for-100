@@ -427,11 +427,11 @@ release_eips() {
                 if egrep -q "DryRunOperation" /tmp/aws-error-file; then
                     echo -e "${GREEN}Ignoring - delete_nat_gateways - dry run set${NC}"
                 else
-                    echo -e "🕱${RED}Failed - could not release eip $x ?${NC}"
+                    echo -e "🕱${RED}Failed - could not release eip $ip $alloc_id ?${NC}"
                     exit 1
                 fi
             else
-                echo -e "${GREEN} -> release_eips [ $ip ] OK${NC}"
+                echo -e "${GREEN} -> release_eips [ $ip, $alloc_id ] OK${NC}"
             fi
         done
         set +o pipefail
@@ -489,7 +489,7 @@ associate_router_eip() {
         echo -e "${GREEN}Ignoring -associate_router_eip - dry run set${NC}"
         return
     fi
-    if [ ! -z "$router_load_balancers" ]; then
+    if [ ! -z "$router_load_balancer" ]; then
         aws elb register-instances-with-load-balancer \
         --load-balancer-name $router_load_balancer \
         --instances $instance_id \

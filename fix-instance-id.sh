@@ -93,7 +93,7 @@ restart_instance() {
 login_openshift() {
     oc login -u kubeadmin -p ${KUBEADMIN_PASSWORD} --server=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 --insecure-skip-tls-verify
     if [ "$?" != 0 ]; then
-        echo -e "🕱${RED}Failed to login to OpenShift${NC}"
+        echo -e "🕱${RED}Failed to login to OpenShift https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 ?${NC}"
         exit 1
     fi
 }
