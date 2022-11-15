@@ -138,7 +138,6 @@ all() {
     delete_node
 
     restart_instance
-    find_node_providerid
 }
 
 usage() {
