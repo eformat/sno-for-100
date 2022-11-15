@@ -1,6 +1,9 @@
 #!/bin/bash
 # -*- coding: UTF-8 -*-
 
+# aws cli v2 - https://github.com/aws/aws-cli/issues/4992
+export AWS_PAGER=""
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 ORANGE='\033[38;5;214m'
