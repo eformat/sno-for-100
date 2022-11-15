@@ -16,7 +16,7 @@ controlPlane:
         size: 150
         type: gp3
 metadata:
-  name: hivec
+  name: my-cluster
 platform:
   aws:
     region: ap-southeast-1

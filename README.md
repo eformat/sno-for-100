@@ -71,6 +71,11 @@ chmod u+x ec2-spot-converter
     ./adjust-single-node.sh -d
     ```
 
+7. Check
+
+    You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
+    Check the router ELB has the instance associated (this will be temporary until you run the fix instance id script).
+
 ## Fix the internal node instance references
 
 1. Export Env.Vars
@@ -78,8 +83,8 @@ chmod u+x ec2-spot-converter
     ```bash
     export AWS_PROFILE=rhpds
     export BASE_DOMAIN=sandbox.acme.com
-    export CLUSTER_NAME=hivec
-    export KUBEADMIN_PASSWORD=rQEtP-kZtcM-jzyu8-MfVhX
+    export CLUSTER_NAME=my-cluster
+    export KUBEADMIN_PASSWORD=your-random-kubeadmin-password
     ```
 
 2. Fix internal node instance references
@@ -95,3 +100,8 @@ chmod u+x ec2-spot-converter
     ```bash
     ./fix-instance-id.sh -d
     ```
+
+3. Check
+
+    You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
+    Check the router ELB has the instance associated OK, this should be done automatically now by the node.
