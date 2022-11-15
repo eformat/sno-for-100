@@ -227,7 +227,7 @@ find_private_route_tables() {
 update_private_routes() {
     set -o pipefail
     if [ ! -z "$private_route_table_ids" ]; then
-        for x in $private_route_table_ids; do
+         $private_route_table_ids; do
             aws ec2 replace-route-table-association \
             ${DRYRUN:---dry-run} \
             --association-id $x \
@@ -417,7 +417,7 @@ release_eips() {
     --output text)
     if [ ! -z "$ep" ]; then
         set -o pipefail
-        for x in "$ep"; do
+        for x in $ep; do
             aws ec2 release-address \
             ${DRYRUN:---dry-run} \
             --region=${region} \
