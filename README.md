@@ -46,16 +46,16 @@ ec2-spot-converter --generate-dynamodb-table
 4. Get our SNO InstanceId
 
     ```bash
-    aws ec2 describe-instances \
+    export INSTANCE_ID=$(aws ec2 describe-instances \
     --query "Reservations[].Instances[].InstanceId" \
     --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" \
-    --output text
+    --output text)
     ```
 
 5. Convert SNO to SPOT
 
     ```bash
-    ec2-spot-converter --stop-instance --instance-id <instance_id>
+    ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
     ```
 
 6. Adjust AWS Objects
