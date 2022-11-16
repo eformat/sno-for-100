@@ -11,7 +11,7 @@ controlPlane:
   hyperthreading: Enabled
   platform:
     aws:
-      type: m4.2xlarge
+      type: m6a.2xlarge
       rootVolume:
         size: 150
         type: gp3
