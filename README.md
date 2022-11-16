@@ -12,6 +12,9 @@ Prerequisites:
 TOOL_VERSION=`curl https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/VERSION.txt`
 curl https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/releases/ec2-spot-converter-${TOOL_VERSION} -o ec2-spot-converter
 chmod u+x ec2-spot-converter
+export AWS_PROFILE=rhpds
+export AWS_REGION=ap-southeast-1
+ec2-spot-converter --generate-dynamodb-table
 ```
 
 ## Install and Adjust the SNO instance
@@ -28,32 +31,30 @@ chmod u+x ec2-spot-converter
 2. Install OpenShift
 
     ```bash
-    openshift-install create ignition-configs --dir=cluster
-    openshift-install create manifests --dir=cluster
+    export AWS_PROFILE=rhpds
+    export AWS_REGION=ap-southeast-1
     openshift-install create cluster --dir=cluster
     ```
 
 3. Export Env.Vars
 
     ```bash
-    export AWS_PROFILE=rhpds
-    export BASE_DOMAIN=sandbox.acme.com
     export CLUSTER_NAME=hivec
+    export BASE_DOMAIN=sandbox.acme.com
     ```
 
 4. Get our SNO InstanceId
 
     ```bash
-    export INSTANCE_ID=`aws ec2 describe-instances \
+    export INSTANCE_ID=$(aws ec2 describe-instances \
     --query "Reservations[].Instances[].InstanceId" \
     --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" \
-    --output text`
+    --output text)
     ```
 
 5. Convert SNO to SPOT
 
     ```bash
-    ec2-spot-converter --generate-dynamodb-table
     ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
     ```
 
@@ -82,6 +83,7 @@ chmod u+x ec2-spot-converter
 
     ```bash
     export AWS_PROFILE=rhpds
+    export AWS_REGION=ap-southeast-1
     export BASE_DOMAIN=sandbox.acme.com
     export CLUSTER_NAME=my-cluster
     export KUBEADMIN_PASSWORD=your-random-kubeadmin-password
