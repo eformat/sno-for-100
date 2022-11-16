@@ -408,6 +408,27 @@ delete_nat_gateways() {
     set +o pipefail
 }
 
+wait_for_nat_gateway_delete() {
+    set -o pipefail
+    if [ ! -z "$nat_gateways" ]; then
+        aws ec2 wait nat-gateway-deleted \
+        ${DRYRUN:---dry-run} \
+        --nat-gateway-id $x \
+        --region=${region} 2>&1 | tee /tmp/aws-error-file
+        if [ "$?" != 0 ]; then
+            if egrep -q "DryRunOperation" /tmp/aws-error-file; then
+                echo -e "${GREEN}Ignoring - wait_for_nat_gateway_delete - dry run set${NC}"
+            else
+                echo -e "🕱${RED}Failed - waiting for nat gateways to delete failed - $nat_gateways ?${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${GREEN} -> wait_for_nat_gateway_delete [ $nat_gateways ] OK${NC}"
+        fi
+    fi
+    set +o pipefail
+}
+
 release_eips() {
     local tag_value="$1"
     IFS=$'\n' read -d '' -r -a lines < <(aws ec2 describe-addresses \
@@ -581,11 +602,11 @@ all() {
 
     find_nat_gateways "$CLUSTER_NAME-*-nat-*"
     delete_nat_gateways
+    wait_for_nat_gateway_delete
     release_eips "$CLUSTER_NAME-*-eip-*"
 
     find_network_load_balancers
     delete_network_load_balancers
-
     restart_instance
 
     find_router_lb
