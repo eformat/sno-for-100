@@ -426,6 +426,7 @@ wait_for_nat_gateway_delete() {
             echo -e "${GREEN} -> wait_for_nat_gateway_delete [ $nat_gateways ] OK${NC}"
         fi
     fi
+    sleep 30 # try to avoid auth failure when we release eip next
     set +o pipefail
 }
 
