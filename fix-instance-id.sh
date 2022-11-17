@@ -133,7 +133,7 @@ wait_for_openshift_api() {
     HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
     until [ $(curl -k -s -o /dev/null -w %{http_code} ${HOST}) = "200" ]
     do
-        echo "${GREEN}Waiting for 200 response from openshift api ${HOST}.${NC}"
+        echo -e "${GREEN}Waiting for 200 response from openshift api ${HOST}.${NC}"
         sleep 5
         ((i=i+1))
         if [ $i -gt 100 ]; then
