@@ -43,22 +43,7 @@ ec2-spot-converter --generate-dynamodb-table
     export BASE_DOMAIN=sandbox.acme.com
     ```
 
-4. Get our SNO InstanceId
-
-    ```bash
-    export INSTANCE_ID=$(aws ec2 describe-instances \
-    --query "Reservations[].Instances[].InstanceId" \
-    --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" \
-    --output text)
-    ```
-
-5. Convert SNO to SPOT
-
-    ```bash
-    ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
-    ```
-
-6. Adjust AWS Objects
+4. Adjust AWS Objects
 
     Dry run (no changes, just perform lookups). Do this first to check output, as the script may over select.
 
@@ -72,7 +57,18 @@ ec2-spot-converter --generate-dynamodb-table
     ./adjust-single-node.sh -d
     ```
 
-7. Check
+5. Convert SNO to SPOT
+
+    ```bash
+    export INSTANCE_ID=$(aws ec2 describe-instances \
+    --query "Reservations[].Instances[].InstanceId" \
+    --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" \
+    --output text)
+    
+    ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
+    ```
+
+6. Check
 
     You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
     Check the router ELB has the instance associated (this will be temporary until you run the fix instance id script).
