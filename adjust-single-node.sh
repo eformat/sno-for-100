@@ -137,6 +137,21 @@ update_master_sg() {
     set +o pipefail
 }
 
+tag_eip() {
+    IFS=$'\n' read -d '' -r -a lines < <(aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" --output text)
+    if [ ! -z "$lines" ]; then
+        set -o pipefail
+        for line in "${lines[@]}"; do 
+            read -r type key resourceid resourcetype value <<< "$line"
+            aws ec2 create-tags --region=${region} --resources ${eip_alloc} --tags Key="$key",Value="$value"
+        done
+        echo -e "${GREEN} -> tag_eip [ $eip, $eip_alloc ] OK${NC}"
+        set +o pipefail
+    else
+        echo -e "💀${ORANGE}Warning - tag_eip - could not find any tags for new eip ?${NC}"
+    fi
+}
+
 find_or_allocate_eip() {
     set -o pipefail
     # check if we have sno-100 eip already
@@ -169,6 +184,7 @@ find_or_allocate_eip() {
                 echo -e "🕱${RED}Failed - problem finding allocated elastic ip ?${NC}"
                 exit 1
             fi
+            tag_eip
             echo -e "${GREEN} -> allocate_eip [ $eip, $eip_alloc ] OK${NC}"
         fi
     else
@@ -426,7 +442,9 @@ wait_for_nat_gateway_delete() {
             echo -e "${GREEN} -> wait_for_nat_gateway_delete [ $nat_gateways ] OK${NC}"
         fi
     fi
-    sleep 30 # try to avoid auth failure when we release eip next
+    if [ ! -z "$DRYRUN" ]; then
+        sleep 30 # try to avoid auth failure when we release eip next
+    fi
     set +o pipefail
 }
 
