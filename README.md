@@ -43,7 +43,18 @@ ec2-spot-converter --generate-dynamodb-table
     export BASE_DOMAIN=sandbox.acme.com
     ```
 
-4. Adjust AWS Objects
+4. Convert SNO to SPOT
+
+    ```bash
+    export INSTANCE_ID=$(aws ec2 describe-instances \
+    --query "Reservations[].Instances[].InstanceId" \
+    --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" "Name=instance-state-name,Values=running" \
+    --output text)
+    
+    ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
+    ```
+
+5. Adjust AWS Objects
 
     Dry run (no changes, just perform lookups). Do this first to check output, as the script may over select.
 
@@ -55,17 +66,6 @@ ec2-spot-converter --generate-dynamodb-table
 
     ```bash
     ./adjust-single-node.sh -d
-    ```
-
-5. Convert SNO to SPOT
-
-    ```bash
-    export INSTANCE_ID=$(aws ec2 describe-instances \
-    --query "Reservations[].Instances[].InstanceId" \
-    --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" "Name=instance-state-name,Values=running" \
-    --output text)
-    
-    ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
     ```
 
 6. Check
