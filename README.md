@@ -70,6 +70,7 @@ ec2-spot-converter --generate-dynamodb-table
 
 6. Check
 
+    It may take a couple of minutes for SNO to settle after restarting (authentication, ingress operators become available).
     You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
     Check the router ELB has the instance associated (this will be temporary until you run the fix instance id script).
 
@@ -101,5 +102,6 @@ ec2-spot-converter --generate-dynamodb-table
 
 3. Check
 
+    It may take a couple of minutes for SNO to settle after restarting (authentication, ingress operators become available).
     You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
     Check the router ELB has the instance associated OK, this should be done automatically now by the node.

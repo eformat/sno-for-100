@@ -446,7 +446,7 @@ release_eips() {
             --allocation-id $alloc_id 2>&1 | tee /tmp/aws-error-file
             if [ "$?" != 0 ]; then
                 if egrep -q "DryRunOperation" /tmp/aws-error-file; then
-                    echo -e "${GREEN}Ignoring - delete_nat_gateways - dry run set${NC}"
+                    echo -e "${GREEN}Ignoring - release_eips - dry run set${NC}"
                 else
                     echo -e "🕱${RED}Failed - could not release eip $ip $alloc_id ?${NC}"
                     exit 1
@@ -507,7 +507,7 @@ find_router_lb() {
 
 associate_router_eip() {
     if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring -associate_router_eip - dry run set${NC}"
+        echo -e "${GREEN}Ignoring - associate_router_eip - dry run set${NC}"
         return
     fi
     if [ ! -z "$router_load_balancer" ]; then
@@ -569,6 +569,25 @@ restart_instance() {
     set +o pipefail
 }
 
+wait_for_openshift_api() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - wait_for_openshift_api - dry run set${NC}"
+        return
+    fi
+    local i=0
+    HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
+    until [ $(curl -k -s -o /dev/null -w %{http_code} ${HOST}) = "200" ]
+    do
+        echo "${GREEN}Waiting for 200 response from openshift api ${HOST}.${NC}"
+        sleep 5
+        ((i=i+1))
+        if [ $i -gt 100 ]; then
+            echo -e "${RED}.Failed - OpenShift api ${HOST} never ready?.${NC}"
+            exit 1
+        fi
+    done
+}
+
 # fixme
 #delete_target_groups() {
     #aws elbv2 describe-target-groups
@@ -611,6 +630,8 @@ all() {
 
     find_router_lb
     associate_router_eip
+
+    wait_for_openshift_api
 }
 
 usage() {

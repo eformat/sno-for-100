@@ -124,6 +124,25 @@ delete_node() {
     oc delete $(oc get node -o name)
 }
 
+wait_for_openshift_api() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - wait_for_openshift_api - dry run set${NC}"
+        return
+    fi
+    local i=0
+    HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
+    until [ $(curl -k -s -o /dev/null -w %{http_code} ${HOST}) = "200" ]
+    do
+        echo "${GREEN}Waiting for 200 response from openshift api ${HOST}.${NC}"
+        sleep 5
+        ((i=i+1))
+        if [ $i -gt 100 ]; then
+            echo -e "${RED}.Failed - OpenShift api ${HOST} never ready?.${NC}"
+            exit 1
+        fi
+    done
+}
+
 # do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
@@ -138,6 +157,7 @@ all() {
     delete_node
 
     restart_instance
+    wait_for_openshift_api
 }
 
 usage() {
