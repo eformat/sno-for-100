@@ -138,7 +138,7 @@ update_master_sg() {
 }
 
 tag_eip() {
-    IFS=$'\n' read -d '' -r -a lines < <(aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" --output text)
+    IFS=$'\n' read -d '' -r -a lines < <(aws ec2 describe-tags --filters "Name=resource-id,Values=$instance_id" --output text)
     if [ ! -z "$lines" ]; then
         set -o pipefail
         for line in "${lines[@]}"; do 
