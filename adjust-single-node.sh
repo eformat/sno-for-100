@@ -481,8 +481,9 @@ release_eips() {
 }
 
 find_network_load_balancers() {
+    query='LoadBalancers[?VpcId==`'${vpc_id}'`]|[].LoadBalancerArn'
     network_load_balancers=$(aws elbv2 describe-load-balancers --region=${region} \
-    --query="LoadBalancers[].LoadBalancerArn" \
+    --query $query \
     --output text)
     if [ -z "$network_load_balancers" ]; then
         echo -e "💀${ORANGE}Warning - could not find load balancers - continuing, they may have been deleted already ?${NC}"
@@ -512,9 +513,10 @@ delete_network_load_balancers() {
 }
 
 find_router_lb() {
+    query='LoadBalancerDescriptions[?VPCId==`'${vpc_id}'`]|[].LoadBalancerName'
     router_load_balancer=$(aws elb describe-load-balancers \
     --region=${region} \
-    --query="LoadBalancerDescriptions[].LoadBalancerName" \
+    --query $query \
     --output text)
     if [ -z "$router_load_balancer" ]; then
         echo -e "🕱${RED}Warning - could not find router load balancer ?${NC}"
