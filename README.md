@@ -78,7 +78,9 @@ export INSTANCE_ID=$(aws ec2 describe-instances \
 --query "Reservations[].Instances[].InstanceId" \
 --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" "Name=instance-state-name,Values=running" \
 --output text)
+```
 
+```bash
 ec2-spot-converter --stop-instance \
 --instance-id $INSTANCE_ID
 ```
