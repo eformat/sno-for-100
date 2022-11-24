@@ -121,7 +121,7 @@ find_router_lb() {
 
 associate_router_instance() {
     if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - associate_router_eip - dry run set${NC}"
+        echo -e "${GREEN}Ignoring - associate_router_instance - dry run set${NC}"
         return
     fi
     if [ ! -z "$router_load_balancer" ]; then
@@ -133,14 +133,16 @@ associate_router_instance() {
             echo -e "🕱${RED}Failed - could not associate router lb  $router_load_balancer with instance $instance_id ?${NC}"
             exit 1
         else
-            # FIXME: Would be better to check the instance is registered and then poll for an InService instance here with a timeout.
-            sleep 45
             echo -e "${GREEN} -> associate_router_eip [ $router_load_balancer, $instance_id ] OK${NC}"
         fi
     fi
 }
 
 login_openshift() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - login_openshift - dry run set${NC}"
+        return
+    fi
     oc login -u kubeadmin -p ${KUBEADMIN_PASSWORD} --server=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 --insecure-skip-tls-verify
     if [ "$?" != 0 ]; then
         echo -e "🕱${RED}Failed to login to OpenShift https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 ?${NC}"
@@ -149,6 +151,10 @@ login_openshift() {
 }
 
 find_node_providerid() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - find_node_providerid - dry run set${NC}"
+        return
+    fi
     node_provider_id=$(oc get nodes -o jsonpath='{.items[0].spec.providerID}')
     if [ -z "$node_provider_id" ]; then
         echo -e "🕱${RED}Failed - could not find openshift node providerid ?${NC}"
