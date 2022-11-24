@@ -87,6 +87,7 @@ There are several other options for the tool not used here but which could be in
 
 * max spot price
 * change instance type
+* delete the AMI when it completes
 * change the encryption key for the root volume
 * convert from spot back to on-demand
 
