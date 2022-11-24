@@ -10,7 +10,7 @@ ORANGE='\033[38;5;214m'
 NC='\033[0m' # No Color
 # env vars
 DRYRUN=
-KUBEADMIN_PASSWORD=${KUBEADMIN_PASSWORD:-}
+KUBECONFIG=${KUBECONFIG:-}
 BASE_DOMAIN=${BASE_DOMAIN:-}
 CLUSTER_NAME=${CLUSTER_NAME:-}
 # prog vars
@@ -138,18 +138,6 @@ associate_router_instance() {
     fi
 }
 
-login_openshift() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - login_openshift - dry run set${NC}"
-        return
-    fi
-    oc login -u kubeadmin -p ${KUBEADMIN_PASSWORD} --server=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 --insecure-skip-tls-verify
-    if [ "$?" != 0 ]; then
-        echo -e "🕱${RED}Failed to login to OpenShift https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 ?${NC}"
-        exit 1
-    fi
-}
-
 find_node_providerid() {
     if [ -z "$DRYRUN" ]; then
         echo -e "${GREEN}Ignoring - find_node_providerid - dry run set${NC}"
@@ -203,6 +191,7 @@ wait_for_openshift_api() {
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
     echo "🌴 CLUSTER_NAME set to $CLUSTER_NAME"
+    echo "🌴 KUBECONFIG set to $KUBECONFIG"
 
     find_region
     find_instance_id "$CLUSTER_NAME-*-master-0"
@@ -211,9 +200,7 @@ all() {
     find_router_lb
     associate_router_instance
 
-    login_openshift
     find_node_providerid
-
     update_providerid_on_node
     delete_node
 
@@ -251,7 +238,7 @@ Environment Variables:
 
         BASE_DOMAIN
         CLUSTER_NAME
-        KUBEADMIN_PASSWORD
+        KUBECONFIG
 
 EOF
   exit 1
@@ -269,7 +256,7 @@ while getopts db:c:p: opts; do
       DRYRUN="--no-dry-run"
       ;;
     p)
-      KUBEADMIN_PASSWORD=$OPTARG
+      KUBECONFIG=$OPTARG
       ;;
     *)
       usage
@@ -286,7 +273,7 @@ shift `expr $OPTIND - 1`
 [ -z "$AWS_PROFILE" ] && [ -z "$AWS_ACCESS_KEY_ID" ] && echo "🕱 Error: AWS_ACCESS_KEY_ID not set in env" && exit 1
 [ -z "$AWS_PROFILE" ] && [ -z "$AWS_SECRET_ACCESS_KEY" ] && echo "🕱 Error: AWS_SECRET_ACCESS_KEY not set in env" && exit 1
 [ -z "$AWS_PROFILE" ] && [ -z "$AWS_DEFAULT_REGION" ] && echo "🕱 Error: AWS_DEFAULT_REGION not set in env" && exit 1
-[ -z "$KUBEADMIN_PASSWORD" ] && [ -z "$KUBEADMIN_PASSWORD" ] && echo "🕱 Error: KUBEADMIN_PASSWORD not set in env or cli" && exit 1
+[ -z "$KUBECONFIG" ] && [ -z "KUBECONFIG" ] && echo "🕱 Error: KUBECONFIG not set in env or cli" && exit 1
 
 all
 

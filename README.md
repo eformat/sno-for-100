@@ -109,7 +109,7 @@ correctly for the life of the cluster.
     export AWS_REGION=ap-southeast-1
     export BASE_DOMAIN=sandbox.acme.com
     export CLUSTER_NAME=my-cluster
-    export KUBEADMIN_PASSWORD=your-random-kubeadmin-password
+    export KUBECONFIG=your-kubeconfig-file
     ```
 
 2. Fix internal node instance references
