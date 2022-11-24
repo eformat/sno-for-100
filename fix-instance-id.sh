@@ -91,6 +91,55 @@ restart_instance() {
     set +o pipefail
 }
 
+find_vpc_id() {
+    local tag_value="$1"
+    vpc_id=$(aws ec2 describe-vpcs --region=${region} \
+    --query "Vpcs[].VpcId" \
+    --filters "Name=tag-value,Values=$tag_value" \
+    --output text)
+    if [ -z "$vpc_id" ]; then
+        echo -e "🕱${RED}Failed - could not find vpc id associated with tag: $tag_value ?${NC}"
+        exit 1
+    else
+        echo "🌴 VpcId set to $vpc_id"
+    fi
+}
+
+find_router_lb() {
+    query='LoadBalancerDescriptions[?VPCId==`'${vpc_id}'`]|[].LoadBalancerName'
+    router_load_balancer=$(aws elb describe-load-balancers \
+    --region=${region} \
+    --query $query \
+    --output text)
+    if [ -z "$router_load_balancer" ]; then
+        echo -e "🕱${RED}Warning - could not find router load balancer ?${NC}"
+        exit 1
+    else
+        echo "🌴 RouterLoadBalancer set to $router_load_balancer"
+    fi
+}
+
+associate_router_instance() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - associate_router_eip - dry run set${NC}"
+        return
+    fi
+    if [ ! -z "$router_load_balancer" ]; then
+        aws elb register-instances-with-load-balancer \
+        --load-balancer-name $router_load_balancer \
+        --instances $instance_id \
+        --region=${region}
+        if [ "$?" != 0 ]; then
+            echo -e "🕱${RED}Failed - could not associate router lb  $router_load_balancer with instance $instance_id ?${NC}"
+            exit 1
+        else
+            # FIXME: Would be better to check the instance is registered and then poll for an InService instance here with a timeout.
+            sleep 45
+            echo -e "${GREEN} -> associate_router_eip [ $router_load_balancer, $instance_id ] OK${NC}"
+        fi
+    fi
+}
+
 login_openshift() {
     oc login -u kubeadmin -p ${KUBEADMIN_PASSWORD} --server=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 --insecure-skip-tls-verify
     if [ "$?" != 0 ]; then
@@ -151,6 +200,11 @@ all() {
 
     find_region
     find_instance_id "$CLUSTER_NAME-*-master-0"
+    find_vpc_id "$CLUSTER_NAME-*-vpc"
+
+    find_router_lb
+    associate_router_instance
+
     login_openshift
     find_node_providerid
 

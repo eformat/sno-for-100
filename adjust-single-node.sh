@@ -513,38 +513,6 @@ delete_network_load_balancers() {
     fi
 }
 
-find_router_lb() {
-    query='LoadBalancerDescriptions[?VPCId==`'${vpc_id}'`]|[].LoadBalancerName'
-    router_load_balancer=$(aws elb describe-load-balancers \
-    --region=${region} \
-    --query $query \
-    --output text)
-    if [ -z "$router_load_balancer" ]; then
-        echo -e "🕱${RED}Warning - could not find router load balancer ?${NC}"
-        exit 1
-    else
-        echo "🌴 RouterLoadBalancer set to $router_load_balancer"
-    fi
-}
-
-associate_router_eip() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - associate_router_eip - dry run set${NC}"
-        return
-    fi
-    if [ ! -z "$router_load_balancer" ]; then
-        aws elb register-instances-with-load-balancer \
-        --load-balancer-name $router_load_balancer \
-        --instances $instance_id \
-        --region=${region}
-        if [ "$?" != 0 ]; then
-            echo -e "🕱${RED}Failed - could not associate router lb  $router_load_balancer with instance $instance_id ?${NC}"
-            exit 1
-        else
-            echo -e "${GREEN} -> associate_router_eip [ $router_load_balancer, $instance_id ] OK${NC}"
-        fi
-    fi
-}
 
 restart_instance() {
     set -o pipefail
@@ -649,9 +617,6 @@ all() {
     find_network_load_balancers
     delete_network_load_balancers
     restart_instance
-
-    find_router_lb
-    associate_router_eip
 
     wait_for_openshift_api
 }
