@@ -29,10 +29,11 @@ network_load_balancers=
 router_load_balancer=
 
 find_region() {
-    if [ ! -z "$AWS_REGION" ]; then 
+    if [ ! -z "$AWS_REGION" ]; then
         region="$AWS_REGION"
+    else
+        region=$(aws configure get region)
     fi
-    region=$(aws configure get region)
     if [ -z "$region" ]; then
         echo -e "🕱${RED}Failed - could not find aws region ?${NC}"
         exit 1
@@ -141,7 +142,7 @@ tag_eip() {
     IFS=$'\n' read -d '' -r -a lines < <(aws ec2 describe-tags --filters "Name=resource-id,Values=$instance_id" --output text)
     if [ ! -z "$lines" ]; then
         set -o pipefail
-        for line in "${lines[@]}"; do 
+        for line in "${lines[@]}"; do
             read -r type key resourceid resourcetype value <<< "$line"
             aws ec2 create-tags --region=${region} --resources ${eip_alloc} --tags Key="$key",Value="$value"
         done
@@ -457,7 +458,7 @@ release_eips() {
     --output text)
     if [ ! -z "$lines" ]; then
         set -o pipefail
-        for line in "${lines[@]}"; do 
+        for line in "${lines[@]}"; do
             read -r ip alloc_id <<< "$line"
             aws ec2 release-address \
             ${DRYRUN:---dry-run} \
@@ -629,7 +630,7 @@ all() {
     update_master_sg
     find_or_allocate_eip
     associate_eip
-    
+
     find_public_route_table "$CLUSTER_NAME-*-public"
     find_private_route_tables "$CLUSTER_NAME-*-private-*"
     update_private_routes
@@ -679,7 +680,7 @@ Environment Variables:
         AWS_ACCESS_KEY_ID
         AWS_SECRET_ACCESS_KEY
         AWS_DEFAULT_REGION
-    
+
     Optionally if not set on command line:
 
         BASE_DOMAIN

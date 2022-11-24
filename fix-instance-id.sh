@@ -18,10 +18,11 @@ region=
 instance_id=
 
 find_region() {
-    if [ ! -z "$AWS_REGION" ]; then 
+    if [ ! -z "$AWS_REGION" ]; then
         region="$AWS_REGION"
+    else
+        region=$(aws configure get region)
     fi
-    region=$(aws configure get region)
     if [ -z "$region" ]; then
         echo -e "🕱${RED}Failed - could not find aws region ?${NC}"
         exit 1
