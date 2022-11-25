@@ -267,7 +267,7 @@ EOF
   exit 1
 }
 
-while getopts db:c:p: opts; do
+while getopts db:c:k: opts; do
   case $opts in
     b)
       BASE_DOMAIN=$OPTARG
@@ -278,7 +278,7 @@ while getopts db:c:p: opts; do
     d)
       DRYRUN="--no-dry-run"
       ;;
-    p)
+    k)
       KUBECONFIG=$OPTARG
       ;;
     *)
