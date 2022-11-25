@@ -202,6 +202,11 @@ approve_all_certificates() {
         oc get csr
     done
     oc get csr -o name | xargs oc adm certificate approve
+    if [ "$?" != 0 ]; then
+        echo -e "🕱${RED}Failed to approve  ?${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN} -> approve_csr OK${NC}"
 }
 
 # do it all
