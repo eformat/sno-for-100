@@ -242,7 +242,7 @@ Optional arguments if not set in environment:
 
         -b     BASE_DOMAIN - openshift base domain (or export BASE_DOMAIN env var)
         -c     CLUSTER_NAME - openshift cluster name (or export CLUSTER_NAME env var)
-        -p     KUBEADMIN_PASSWORD - openshift kubeadmin password from install
+        -k     KUBECONFIG - full path to the kubeconfig file
 
 This script is rerunnable.
 
