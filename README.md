@@ -10,8 +10,7 @@
 
 ### Generate DynamoDB Table
 
-This step needs performed once in each region and account you will
-be provisioning the instances. 
+This step needs to be performed once in each region and account that you will be provisioning instances.
 It serves as a temporal tracking table for the tool.
 
 ```bash
