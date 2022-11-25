@@ -513,76 +513,6 @@ delete_network_load_balancers() {
     fi
 }
 
-
-restart_instance() {
-    set -o pipefail
-    aws ec2 stop-instances \
-    ${DRYRUN:---dry-run} \
-    --region=${region} \
-    --instance-ids=$instance_id 2>&1 | tee /tmp/aws-error-file
-    if [ "$?" != 0 ]; then
-        if egrep -q "DryRunOperation" /tmp/aws-error-file; then
-            echo -e "${GREEN}Ignoring - restart_instance stop instance - dry run set${NC}"
-        else
-            echo -e "🕱${RED}Failed - could not stop $instance_id ?${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${GREEN} -> restart_instance stopping [ $instance_id ] OK${NC}"
-    fi
-
-    echo -e "${GREEN} -> wait instance-stopped ... [ $instance_id ]${NC}"
-    aws ec2 wait instance-stopped \
-    ${DRYRUN:---dry-run} \
-    --region=${region} \
-    --instance-ids $instance_id
-
-    if [ ! -z "$DRYRUN" ]; then
-        sleep 120 # fix me spot restart is not elegant
-        echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
-    fi
-
-    aws ec2 start-instances \
-    ${DRYRUN:---dry-run} \
-    --region=${region} \
-    --instance-ids=$instance_id 2>&1 | tee /tmp/aws-error-file
-    if [ "$?" != 0 ]; then
-        if egrep -q "DryRunOperation" /tmp/aws-error-file; then
-            echo -e "${GREEN}Ignoring - restart_instance start instance - dry run set${NC}"
-        else
-            echo -e "🕱${RED}Failed - could not start $instance_id ?${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${GREEN} -> restart_instance starting [ $instance_id ] OK${NC}"
-    fi
-    set +o pipefail
-}
-
-wait_for_openshift_api() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - wait_for_openshift_api - dry run set${NC}"
-        return
-    fi
-    local i=0
-    HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
-    until [ $(curl -k -s -o /dev/null -w %{http_code} ${HOST}) = "200" ]
-    do
-        echo -e "${GREEN}Waiting for 200 response from openshift api ${HOST}.${NC}"
-        sleep 5
-        ((i=i+1))
-        if [ $i -gt 100 ]; then
-            echo -e "${RED}.Failed - OpenShift api ${HOST} never ready?.${NC}"
-            exit 1
-        fi
-    done
-}
-
-# fixme
-#delete_target_groups() {
-    #aws elbv2 describe-target-groups
-#}
-
 # do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
@@ -616,9 +546,6 @@ all() {
 
     find_network_load_balancers
     delete_network_load_balancers
-    restart_instance
-
-    wait_for_openshift_api
 }
 
 usage() {
