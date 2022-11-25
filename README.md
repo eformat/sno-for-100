@@ -107,7 +107,7 @@ After converting to spot, there are a few references to the old instance ID in t
     export AWS_REGION=ap-southeast-1
     export BASE_DOMAIN=sandbox.acme.com
     export CLUSTER_NAME=my-cluster
-    export KUBECONFIG=your-kubeconfig-file
+    export KUBECONFIG=<path to your>/cluster/auth/kubeconfig 
     ```
 
 2. Fix internal node instance references
