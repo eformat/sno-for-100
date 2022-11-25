@@ -45,7 +45,8 @@ It will remove the unneeded portions of the networking infrastructure.
 3. Export Env.Vars
 
     ```bash
-    export CLUSTER_NAME=hivec
+    export KUBECONFIG=<path to your>/cluster/auth/kubeconfig 
+    export CLUSTER_NAME=my-cluster
     export BASE_DOMAIN=sandbox.acme.com
     ```
 
@@ -65,7 +66,7 @@ It will remove the unneeded portions of the networking infrastructure.
 
 5. Check
 
-    It may take a couple of minutes for SNO to settle after restarting (authentication, ingress operators become available).
+    It may take a couple of minutes for SNO to settle down (authentication, ingress operators become available).
     You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
     Check the router ELB has the instance associated (this will be temporary until you run the fix instance id script).
 
@@ -93,14 +94,11 @@ There are several other options for the tool not used here but which could be in
 * change the encryption key for the root volume
 * convert from spot back to on-demand
 
-Documentation of those settings and more as well as how to incorporate them into the above call
-are on the ec2-spot-converter tool's homepage.
+Documentation of the settings and how to use them are on the ec2-spot-converter tool's homepage.
 
 ## Fix the internal node instance references
 
-After converting to spot, there are a few references to the old 
-instance ID in the cluster which must be remedied so the operators function
-correctly for the life of the cluster.
+After converting to spot, there are a few references to the old instance ID in the cluster which must be remedied so the operators function correctly for the life of the cluster.
 
 1. Export Env.Vars
 
@@ -131,3 +129,11 @@ correctly for the life of the cluster.
     It may take a couple of minutes for SNO to settle after restarting (authentication, ingress operators become available).
     You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
     Check the router ELB has the instance associated OK, this should be done automatically now by the node.
+
+## Delete SNO instance
+
+1. If you no longer need your instance, to remove all related aws objects just run.
+
+    ```bash
+    openshift-install destroy cluster --dir=cluster
+    ```
