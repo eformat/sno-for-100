@@ -187,6 +187,27 @@ wait_for_openshift_api() {
     done
 }
 
+approve_all_certificates() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - approve_all_certificates - dry run set${NC}"
+        return
+    fi
+    local i=0
+    oc get csr
+    until [ "$?" == 0 ]
+    do
+        echo -e "${GREEN}Waiting for 0 rc from oc commands.${NC}"
+        ((i=i+1))
+        if [ $i -gt 100 ]; then
+            echo -e "${RED}.Failed - oc never ready?.${NC}"
+            exit 1
+        fi
+        sleep 5
+        oc get csr
+    done
+    oc get csr -o name | xargs oc adm certificate approve
+}
+
 # do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
@@ -206,6 +227,7 @@ all() {
 
     restart_instance
     wait_for_openshift_api
+    approve_all_certificates
 }
 
 usage() {
