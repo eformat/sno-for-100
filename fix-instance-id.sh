@@ -169,10 +169,6 @@ delete_node() {
 }
 
 wait_for_openshift_api() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - wait_for_openshift_api - dry run set${NC}"
-        return
-    fi
     local i=0
     HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
     until [ $(curl -k -s -o /dev/null -w %{http_code} ${HOST}) = "200" ]
