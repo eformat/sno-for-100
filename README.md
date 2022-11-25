@@ -1,23 +1,29 @@
 # sno-for-100
 
-Prerequisites:
+## Prerequisites:
 
 - [AWS command line](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - [AWS account login](https://aws.amazon.com/console/)
 - [OpenShift pull secret](https://cloud.redhat.com/openshift/install/pull-secret)
 - [OpenShift command line and installer](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/)
-- [ec2-spot-converter script](https://pythonawesome.com/a-tool-to-convert-aws-ec2-instances-back-and-forth-between-on-demand/)
+- [ec2-spot-converter script](https://github.com/jcjorel/ec2-spot-converter/)
+
+### Generate DynamoDB Table
+
+This step needs performed once in each region and account you will
+be provisioning the instances. 
+It serves as a temporal tracking table for the tool.
 
 ```bash
-TOOL_VERSION=`curl https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/VERSION.txt`
-curl https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/releases/ec2-spot-converter-${TOOL_VERSION} -o ec2-spot-converter
-chmod u+x ec2-spot-converter
 export AWS_PROFILE=rhpds
 export AWS_REGION=ap-southeast-1
 ec2-spot-converter --generate-dynamodb-table
 ```
 
 ## Install and Adjust the SNO instance
+
+This portion performs a SNO install and then moves it to the public subnets.
+It will remove the unneeded portions of the networking infrastructure.
 
 1. Create Openshift SNO AWS Config
 
@@ -43,18 +49,7 @@ ec2-spot-converter --generate-dynamodb-table
     export BASE_DOMAIN=sandbox.acme.com
     ```
 
-4. Convert SNO to SPOT
-
-    ```bash
-    export INSTANCE_ID=$(aws ec2 describe-instances \
-    --query "Reservations[].Instances[].InstanceId" \
-    --filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" "Name=instance-state-name,Values=running" \
-    --output text)
-    
-    ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
-    ```
-
-5. Adjust AWS Objects
+4. Adjust AWS Objects
 
     Dry run (no changes, just perform lookups). Do this first to check output, as the script may over select.
 
@@ -68,13 +63,44 @@ ec2-spot-converter --generate-dynamodb-table
     ./adjust-single-node.sh -d
     ```
 
-6. Check
+5. Check
 
     It may take a couple of minutes for SNO to settle after restarting (authentication, ingress operators become available).
     You should now be able to login to your cluster OK. Check `oc get co` to make sure cluster operators are healthy.
     Check the router ELB has the instance associated (this will be temporary until you run the fix instance id script).
 
+## Convert SNO to SPOT pricing
+
+This portion does the actual conversion to persistent spot instance pricing.
+    
+```bash
+export INSTANCE_ID=$(aws ec2 describe-instances \
+--query "Reservations[].Instances[].InstanceId" \
+--filters "Name=tag-value,Values=$CLUSTER_NAME-*-master-0" "Name=instance-state-name,Values=running" \
+--output text)
+```
+
+```bash
+ec2-spot-converter --stop-instance \
+--instance-id $INSTANCE_ID
+```
+
+There are several other options for the tool not used here but which could be invoked:
+
+* max spot price
+* change instance type
+* delete the AMI when it completes
+* change the encryption key for the root volume
+* convert from spot back to on-demand
+
+Documentation of those settings and more as well as how to incorporate them into the above call
+are on the ec2-spot-converter tool's homepage.
+
 ## Fix the internal node instance references
+
+After converting to spot, there are a few references to the old 
+instance ID in the cluster which must be remedied so the operators function
+correctly for the life of the cluster.
 
 1. Export Env.Vars
 
@@ -83,7 +109,7 @@ ec2-spot-converter --generate-dynamodb-table
     export AWS_REGION=ap-southeast-1
     export BASE_DOMAIN=sandbox.acme.com
     export CLUSTER_NAME=my-cluster
-    export KUBEADMIN_PASSWORD=your-random-kubeadmin-password
+    export KUBECONFIG=your-kubeconfig-file
     ```
 
 2. Fix internal node instance references

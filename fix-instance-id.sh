@@ -10,7 +10,7 @@ ORANGE='\033[38;5;214m'
 NC='\033[0m' # No Color
 # env vars
 DRYRUN=
-KUBEADMIN_PASSWORD=${KUBEADMIN_PASSWORD:-}
+KUBECONFIG=${KUBECONFIG:-}
 BASE_DOMAIN=${BASE_DOMAIN:-}
 CLUSTER_NAME=${CLUSTER_NAME:-}
 # prog vars
@@ -91,26 +91,58 @@ restart_instance() {
     set +o pipefail
 }
 
-login_openshift() {
-    oc login -u kubeadmin -p ${KUBEADMIN_PASSWORD} --server=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 --insecure-skip-tls-verify
-    if [ "$?" != 0 ]; then
-        echo -e "🕱${RED}Failed to login to OpenShift https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443 ?${NC}"
+find_vpc_id() {
+    local tag_value="$1"
+    vpc_id=$(aws ec2 describe-vpcs --region=${region} \
+    --query "Vpcs[].VpcId" \
+    --filters "Name=tag-value,Values=$tag_value" \
+    --output text)
+    if [ -z "$vpc_id" ]; then
+        echo -e "🕱${RED}Failed - could not find vpc id associated with tag: $tag_value ?${NC}"
         exit 1
+    else
+        echo "🌴 VpcId set to $vpc_id"
     fi
 }
 
-approve_csr() {
-    if [ ! -z "$(oc get csr -o name)" ]; then
-        oc get csr -o name | xargs oc adm certificate approve
+find_router_lb() {
+    query='LoadBalancerDescriptions[?VPCId==`'${vpc_id}'`]|[].LoadBalancerName'
+    router_load_balancer=$(aws elb describe-load-balancers \
+    --region=${region} \
+    --query $query \
+    --output text)
+    if [ -z "$router_load_balancer" ]; then
+        echo -e "🕱${RED}Warning - could not find router load balancer ?${NC}"
+        exit 1
+    else
+        echo "🌴 RouterLoadBalancer set to $router_load_balancer"
+    fi
+}
+
+associate_router_instance() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - associate_router_instance - dry run set${NC}"
+        return
+    fi
+    if [ ! -z "$router_load_balancer" ]; then
+        aws elb register-instances-with-load-balancer \
+        --load-balancer-name $router_load_balancer \
+        --instances $instance_id \
+        --region=${region}
         if [ "$?" != 0 ]; then
-            echo -e "🕱${RED}Failed to approve  ?${NC}"
+            echo -e "🕱${RED}Failed - could not associate router lb  $router_load_balancer with instance $instance_id ?${NC}"
             exit 1
+        else
+            echo -e "${GREEN} -> associate_router_eip [ $router_load_balancer, $instance_id ] OK${NC}"
         fi
-        echo -e "${GREEN} -> approve_csr OK${NC}"
     fi
 }
 
 find_node_providerid() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - find_node_providerid - dry run set${NC}"
+        return
+    fi
     node_provider_id=$(oc get nodes -o jsonpath='{.items[0].spec.providerID}')
     if [ -z "$node_provider_id" ]; then
         echo -e "🕱${RED}Failed - could not find openshift node providerid ?${NC}"
@@ -137,10 +169,6 @@ delete_node() {
 }
 
 wait_for_openshift_api() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - wait_for_openshift_api - dry run set${NC}"
-        return
-    fi
     local i=0
     HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
     until [ $(curl -k -s -o /dev/null -w %{http_code} ${HOST}) = "200" ]
@@ -155,22 +183,52 @@ wait_for_openshift_api() {
     done
 }
 
+approve_all_certificates() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - approve_all_certificates - dry run set${NC}"
+        return
+    fi
+    local i=0
+    oc get csr
+    until [ "$?" == 0 ]
+    do
+        echo -e "${GREEN}Waiting for 0 rc from oc commands.${NC}"
+        ((i=i+1))
+        if [ $i -gt 100 ]; then
+            echo -e "${RED}.Failed - oc never ready?.${NC}"
+            exit 1
+        fi
+        sleep 5
+        oc get csr
+    done
+    oc get csr -o name | xargs oc adm certificate approve
+    if [ "$?" != 0 ]; then
+        echo -e "🕱${RED}Failed to approve  ?${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN} -> approve_csr OK${NC}"
+}
+
 # do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
     echo "🌴 CLUSTER_NAME set to $CLUSTER_NAME"
+    echo "🌴 KUBECONFIG set to $KUBECONFIG"
 
     find_region
     find_instance_id "$CLUSTER_NAME-*-master-0"
-    login_openshift
-    approve_csr
-    find_node_providerid
+    find_vpc_id "$CLUSTER_NAME-*-vpc"
 
+    find_router_lb
+    associate_router_instance
+
+    find_node_providerid
     update_providerid_on_node
     delete_node
 
     restart_instance
     wait_for_openshift_api
+    approve_all_certificates
 }
 
 usage() {
@@ -203,7 +261,7 @@ Environment Variables:
 
         BASE_DOMAIN
         CLUSTER_NAME
-        KUBEADMIN_PASSWORD
+        KUBECONFIG
 
 EOF
   exit 1
@@ -221,7 +279,7 @@ while getopts db:c:p: opts; do
       DRYRUN="--no-dry-run"
       ;;
     p)
-      KUBEADMIN_PASSWORD=$OPTARG
+      KUBECONFIG=$OPTARG
       ;;
     *)
       usage
@@ -238,7 +296,7 @@ shift `expr $OPTIND - 1`
 [ -z "$AWS_PROFILE" ] && [ -z "$AWS_ACCESS_KEY_ID" ] && echo "🕱 Error: AWS_ACCESS_KEY_ID not set in env" && exit 1
 [ -z "$AWS_PROFILE" ] && [ -z "$AWS_SECRET_ACCESS_KEY" ] && echo "🕱 Error: AWS_SECRET_ACCESS_KEY not set in env" && exit 1
 [ -z "$AWS_PROFILE" ] && [ -z "$AWS_DEFAULT_REGION" ] && echo "🕱 Error: AWS_DEFAULT_REGION not set in env" && exit 1
-[ -z "$KUBEADMIN_PASSWORD" ] && [ -z "$KUBEADMIN_PASSWORD" ] && echo "🕱 Error: KUBEADMIN_PASSWORD not set in env or cli" && exit 1
+[ -z "$KUBECONFIG" ] && [ -z "KUBECONFIG" ] && echo "🕱 Error: KUBECONFIG not set in env or cli" && exit 1
 
 all
 
