@@ -99,6 +99,17 @@ login_openshift() {
     fi
 }
 
+approve_csr() {
+    if [ ! -z "$(oc get csr -o name)" ]; then
+        oc get csr -o name | xargs oc adm certificate approve
+        if [ "$?" != 0 ]; then
+            echo -e "🕱${RED}Failed to approve  ?${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN} -> approve_csr OK${NC}"
+    fi
+}
+
 find_node_providerid() {
     node_provider_id=$(oc get nodes -o jsonpath='{.items[0].spec.providerID}')
     if [ -z "$node_provider_id" ]; then
@@ -152,6 +163,7 @@ all() {
     find_region
     find_instance_id "$CLUSTER_NAME-*-master-0"
     login_openshift
+    approve_csr
     find_node_providerid
 
     update_providerid_on_node
