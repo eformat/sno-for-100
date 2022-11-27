@@ -223,6 +223,7 @@ all() {
     associate_router_instance
 
     find_node_providerid
+    wait_for_openshift_api
     update_providerid_on_node
     delete_node
 
