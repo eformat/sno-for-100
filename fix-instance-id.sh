@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 ORANGE='\033[38;5;214m'
 NC='\033[0m' # No Color
 # env vars
-DRYRUN=
+DRYRUN==${DRYRUN:-}
 KUBECONFIG=${KUBECONFIG:-}
 BASE_DOMAIN=${BASE_DOMAIN:-}
 CLUSTER_NAME=${CLUSTER_NAME:-}
@@ -177,7 +177,7 @@ wait_for_openshift_api() {
         sleep 5
         ((i=i+1))
         if [ $i -gt 100 ]; then
-            echo -e "${RED}.Failed - OpenShift api ${HOST} never ready?.${NC}"
+            echo -e "🕱${RED}Failed - OpenShift api ${HOST} never ready?.${NC}"
             exit 1
         fi
     done
@@ -195,7 +195,7 @@ approve_all_certificates() {
         echo -e "${GREEN}Waiting for 0 rc from oc commands.${NC}"
         ((i=i+1))
         if [ $i -gt 100 ]; then
-            echo -e "${RED}.Failed - oc never ready?.${NC}"
+            echo -e "🕱${RED}Failed - oc never ready?.${NC}"
             exit 1
         fi
         sleep 5
