@@ -143,7 +143,7 @@ Try the all-in-one invocation.
 
 ```bash
     export AWS_PROFILE=rhpds
-    export AWS_REGION=ap-southeast-1
+    export AWS_DEFAULT_REGION=ap-southeast-1
     export CLUSTER_NAME=my-cluster
     export BASE_DOMAIN=sandbox.acme.com
     export PULL_SECRET=\$(cat ~/tmp/pull-secret)
