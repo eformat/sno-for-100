@@ -139,10 +139,6 @@ associate_router_instance() {
 }
 
 find_node_providerid() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - find_node_providerid - dry run set${NC}"
-        return
-    fi
     node_provider_id=$(oc get nodes -o jsonpath='{.items[0].spec.providerID}')
     if [ -z "$node_provider_id" ]; then
         echo -e "🕱${RED}Failed - could not find openshift node providerid ?${NC}"
@@ -224,11 +220,14 @@ all() {
 
     wait_for_openshift_api
     find_node_providerid
-    update_providerid_on_node
-    delete_node
-
-    restart_instance
-    wait_for_openshift_api
+    if [[ "$node_provider_id" != *"$instance_id"* ]]; then
+        update_providerid_on_node
+        delete_node
+        restart_instance
+        wait_for_openshift_api
+    else
+        echo -e "${GREEN} -> $instance_id already set on node $node_provider_id, so not redoing it. OK${NC}"
+    fi
     approve_all_certificates
 }
 
