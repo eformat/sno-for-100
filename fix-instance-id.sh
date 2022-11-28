@@ -133,7 +133,7 @@ associate_router_instance() {
             echo -e "🕱${RED}Failed - could not associate router lb  $router_load_balancer with instance $instance_id ?${NC}"
             exit 1
         else
-            echo -e "${GREEN} -> associate_router_eip [ $router_load_balancer, $instance_id ] OK${NC}"
+            echo -e "${GREEN} -> associate_router_instance [ $router_load_balancer, $instance_id ] OK${NC}"
         fi
     fi
 }
@@ -222,8 +222,8 @@ all() {
     find_router_lb
     associate_router_instance
 
-    find_node_providerid
     wait_for_openshift_api
+    find_node_providerid
     update_providerid_on_node
     delete_node
 
