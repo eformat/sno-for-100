@@ -15,7 +15,7 @@ It serves as a temporal tracking table for the tool.
 
 ```bash
 export AWS_PROFILE=rhpds
-export AWS_REGION=ap-southeast-1
+export AWS_DEFAULT_REGION=ap-southeast-1
 ec2-spot-converter --generate-dynamodb-table
 ```
 
@@ -37,7 +37,7 @@ It will remove the unneeded portions of the networking infrastructure.
 
     ```bash
     export AWS_PROFILE=rhpds
-    export AWS_REGION=ap-southeast-1
+    export AWS_DEFAULT_REGION=ap-southeast-1
     openshift-install create cluster --dir=cluster
     ```
 
@@ -103,7 +103,7 @@ After converting to spot, there are a few references to the old instance ID in t
 
     ```bash
     export AWS_PROFILE=rhpds
-    export AWS_REGION=ap-southeast-1
+    export AWS_DEFAULT_REGION=ap-southeast-1
     export BASE_DOMAIN=sandbox.acme.com
     export CLUSTER_NAME=my-cluster
     export KUBECONFIG=<path to your>/cluster/auth/kubeconfig 
