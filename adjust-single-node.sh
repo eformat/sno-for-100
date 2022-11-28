@@ -29,8 +29,8 @@ network_load_balancers=
 router_load_balancer=
 
 find_region() {
-    if [ ! -z "$AWS_REGION" ]; then
-        region="$AWS_REGION"
+    if [ ! -z "$AWS_DEFAULT_REGION" ]; then
+        region="$AWS_DEFAULT_REGION"
     else
         region=$(aws configure get region)
     fi
