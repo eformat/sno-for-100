@@ -136,3 +136,19 @@ After converting to spot, there are a few references to the old instance ID in t
     ```bash
     openshift-install destroy cluster --dir=cluster
     ```
+
+## 💥💥 Experimental 💥💥
+
+Try the all-in-one invocation.
+
+```bash
+    export AWS_PROFILE=rhpds
+    export AWS_REGION=ap-southeast-1
+    export CLUSTER_NAME=my-cluster
+    export BASE_DOMAIN=sandbox.acme.com
+    export PULL_SECRET=\$(cat ~/tmp/pull-secret)
+    export SSH_KEY=\$(cat ~/.ssh/id_rsa.pub)
+
+    mkdir my-run && cd my-run
+    curl -Ls https://raw.githubusercontent.com/eformat/sno-for-100/main/sno-for-100.sh | bash -s -- -d
+```
