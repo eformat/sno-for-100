@@ -146,8 +146,8 @@ Try the all-in-one invocation.
     export AWS_DEFAULT_REGION=ap-southeast-1
     export CLUSTER_NAME=my-cluster
     export BASE_DOMAIN=sandbox.acme.com
-    export PULL_SECRET=\$(cat ~/tmp/pull-secret)
-    export SSH_KEY=\$(cat ~/.ssh/id_rsa.pub)
+    export PULL_SECRET=$(cat ~/tmp/pull-secret)
+    export SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
     mkdir my-run && cd my-run
     curl -Ls https://raw.githubusercontent.com/eformat/sno-for-100/main/sno-for-100.sh | bash -s -- -d
