@@ -146,6 +146,7 @@ Try the all-in-one invocation.
     export AWS_DEFAULT_REGION=ap-southeast-1
     export CLUSTER_NAME=my-cluster
     export BASE_DOMAIN=sandbox.acme.com
+    export INSTANCE_TYPE=m6a.2xlarge
     export PULL_SECRET=$(cat ~/tmp/pull-secret)
     export SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
