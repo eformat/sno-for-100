@@ -77,6 +77,9 @@ prepare_install_config() {
     sed -i "s|    region:.*|    region: $region|" ${RUN_DIR}/install-config.yaml
     sed -i "s|pullSecret:.*|pullSecret: '$PULL_SECRET'|" ${RUN_DIR}/install-config.yaml
     sed -i "s|sshKey:.*|sshKey: '$SSH_KEY'|" ${RUN_DIR}/install-config.yaml
+    if [ ! -z "$AWS_DEFAULT_ZONES" ]; then
+        yq e '.controlPlane.platform.aws.zones = env(AWS_DEFAULT_ZONES) | ..style="double"' -i ${RUN_DIR}/install-config.yaml
+    fi
     cp ${RUN_DIR}/install-config.yaml ${RUN_DIR}/cluster/install-config.yaml
 }
 
@@ -270,6 +273,7 @@ Environment Variables:
         AWS_ACCESS_KEY_ID
         AWS_SECRET_ACCESS_KEY
         AWS_DEFAULT_REGION
+        AWS_DEFAULT_ZONES (Optional array list - e.g ["us-east-2b","us-east-2c"])
 
     Optionally if not set on command line:
 
@@ -283,7 +287,8 @@ Environment Variables:
 Example:
 
     export AWS_PROFILE=rhpds
-    export AWS_REGION=ap-southeast-2
+    export AWS_DEFAULT_REGION=us-east-2
+    export AWS_DEFAULT_ZONES=us-east-2a
     export CLUSTER_NAME=foo-sno
     export BASE_DOMAIN=demo.redhatlabs.dev
     export PULL_SECRET=\$(cat ~/tmp/pull-secret)
