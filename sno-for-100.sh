@@ -78,7 +78,7 @@ prepare_install_config() {
     sed -i "s|pullSecret:.*|pullSecret: '$PULL_SECRET'|" ${RUN_DIR}/install-config.yaml
     sed -i "s|sshKey:.*|sshKey: '$SSH_KEY'|" ${RUN_DIR}/install-config.yaml
     if [ ! -z "$AWS_DEFAULT_ZONES" ]; then
-        yq e '.controlPlane.platform.aws.zones = env(AWS_DEFAULT_ZONES) | ..style="double"' -i ${RUN_DIR}/install-config.yaml
+        yq e '.controlPlane.platform.aws.zones = env(AWS_DEFAULT_ZONES)' -i ${RUN_DIR}/install-config.yaml
     fi
     cp ${RUN_DIR}/install-config.yaml ${RUN_DIR}/cluster/install-config.yaml
 }
