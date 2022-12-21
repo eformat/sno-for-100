@@ -288,7 +288,7 @@ Example:
 
     export AWS_PROFILE=rhpds
     export AWS_DEFAULT_REGION=us-east-2
-    export AWS_DEFAULT_ZONES=us-east-2a
+    export AWS_DEFAULT_ZONES=["us-east-2a"]
     export CLUSTER_NAME=foo-sno
     export BASE_DOMAIN=demo.redhatlabs.dev
     export PULL_SECRET=\$(cat ~/tmp/pull-secret)
