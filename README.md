@@ -143,7 +143,7 @@ After converting to spot, there are a few references to the old instance ID in t
 
 Try the all-in-one invocation.
 
-```bash
+    ```bash
     export AWS_PROFILE=rhpds
     export AWS_DEFAULT_REGION=ap-southeast-1
     export CLUSTER_NAME=my-cluster
@@ -154,4 +154,4 @@ Try the all-in-one invocation.
 
     mkdir my-run && cd my-run
     curl -Ls https://raw.githubusercontent.com/eformat/sno-for-100/main/sno-for-100.sh | bash -s -- -d
-```
+    ```
