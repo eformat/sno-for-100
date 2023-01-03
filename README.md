@@ -141,7 +141,7 @@ After converting to spot, there are a few references to the old instance ID in t
 
 ## 💥💥 Experimental 💥💥
 
-Try the all-in-one invocation.
+1. Try the all-in-one invocation.
 
     ```bash
     export AWS_PROFILE=rhpds
