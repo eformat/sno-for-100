@@ -1,5 +1,7 @@
 # sno-for-100
 
+Single Node OpenShift on AWS Spot for < $100/mon
+
 ## Prerequisites:
 
 - [AWS command line](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
