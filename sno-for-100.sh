@@ -16,6 +16,7 @@ PULL_SECRET=${PULL_SECRET:-}
 SSH_KEY=${SSH_KEY:-}
 ROOT_VOLUME_SIZE=${ROOT_VOLUME_SIZE:-100}
 INSTANCE_TYPE=${INSTANCE_TYPE:-"m5a.2xlarge"}
+OPENSHIFT_VERSION=${OPENSHIFT_VERSION:"stable"}
 # prog vars
 region=
 instance_id=
@@ -195,7 +196,7 @@ download_ec2_converter() {
 }
 
 download_openshift_installer() {
-    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-install-linux.tar.gz -o ${RUN_DIR}/openshift-install-linux.tar.gz)
+    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OPENSHIFT_VERSION}/openshift-install-linux.tar.gz -o ${RUN_DIR}/openshift-install-linux.tar.gz)
     if [ "$ret" != "200" ]; then
         echo -e "🕱${RED}Failed - to download openshift-install-linux.tar.gz ?.${NC}"
         return $ret
@@ -209,7 +210,7 @@ download_openshift_installer() {
 }
 
 download_openshift_cli() {
-    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz -o ${RUN_DIR}/openshift-client-linux.tar.gz)
+    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OPENSHIFT_VERSION}/openshift-client-linux.tar.gz -o ${RUN_DIR}/openshift-client-linux.tar.gz)
     if [ "$ret" != "200" ]; then
         echo -e "🕱${RED}Failed - to download openshift-client-linux.tar.gz ?.${NC}"
         return $ret
@@ -260,6 +261,7 @@ Optional arguments if not set in environment:
         -s     SSH_KEY      - openshift ssh key (or export SSH_KEY env var) e.g. SSH_KEY=\$(cat ~/.ssh/id_rsa.pub)
         -v     ROOT_VOLUME_SIZE - root vol size in GB (or export ROOT_VOLUME_SIZE env var, default: 100)
         -t     INSTANCE_TYPE - instance type (or export INSTANCE_TYPE, default: m5a.2xlarge)
+        -o     OPENSHIFT_VERSION - OpenShift Version (or export OPENSHIFT_VERSION env var default: stable)
 
 This script is rerunnable. It will download the artifacts it needs to run into the current working directory.
 
@@ -283,6 +285,7 @@ Environment Variables:
         SSH_KEY
         ROOT_VOLUME_SIZE
         INSTANCE_TYPE
+        OPENSHIFT_VERSION
 
 Example:
 
@@ -301,7 +304,7 @@ EOF
   exit 1
 }
 
-while getopts b:c:p:s:v:t:d opt; do
+while getopts b:c:p:s:v:t:d:o opt; do
   case $opt in
     b)
       export BASE_DOMAIN=$OPTARG
@@ -323,6 +326,9 @@ while getopts b:c:p:s:v:t:d opt; do
       ;;
     t)
       export INSTANCE_TYPE=$OPTARG
+      ;;
+    o)
+      export OPENSHIFT_VERSION=$OPTARG
       ;;
     *)
       usage
