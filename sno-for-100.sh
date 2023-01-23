@@ -248,7 +248,7 @@ all() {
 
 usage() {
   cat <<EOF 2>&1
-usage: $0 [ -d -b <BASE_DOMAIN> -c <CLUSTER_NAME> -p <PULL_SECRET> -s <SSH_KEY> -v <ROOT_VOLUME_SIZE> -t <INSTANCE_TYPE> ]
+usage: $0 [ -d -b <BASE_DOMAIN> -c <CLUSTER_NAME> -p <PULL_SECRET> -s <SSH_KEY> -v <ROOT_VOLUME_SIZE> -t <INSTANCE_TYPE> -o <OPENSHIFT_VERSION> ]
 
 Provision a SNO for 100 spot instace. By default dry-run is ON ! You must set -d to doIt™️
         -d     do it ! no dry run - else we print out whats going to happen and any non desructive lookups
