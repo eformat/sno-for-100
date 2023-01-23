@@ -304,7 +304,7 @@ EOF
   exit 1
 }
 
-while getopts b:c:p:s:v:t:d:o opt; do
+while getopts b:c:p:s:v:t:o:d opt; do
   case $opt in
     b)
       export BASE_DOMAIN=$OPTARG
