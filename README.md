@@ -139,7 +139,7 @@ After converting to spot, there are a few references to the old instance ID in t
     openshift-install destroy cluster --dir=cluster
     ```
 
-## 💥💥 Experimental 💥💥
+## 💥💥 Try the all-in-one installation 💥💥
 
 1. Try the all-in-one invocation.
 
