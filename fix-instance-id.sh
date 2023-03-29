@@ -153,7 +153,7 @@ update_providerid_on_node() {
         echo -e "${GREEN}Ignoring - update_providerid_on_node - dry run set${NC}"
         return
     fi
-    oc debug -T $(oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
+    oc -n default debug -T $(oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
 }
 
 delete_node() {
