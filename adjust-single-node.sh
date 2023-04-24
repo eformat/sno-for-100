@@ -74,7 +74,7 @@ find_vpc_id() {
 find_master_sg() {
     local tag_value="$1"
     master_sg=$(aws ec2 describe-security-groups \
-      --region=${region} \
+    --region=${region} \
     --query "SecurityGroups[].GroupId" \
     --filters "Name=vpc-id,Values=${vpc_id}" \
     --filters "Name=tag-value,Values=$tag_value" \

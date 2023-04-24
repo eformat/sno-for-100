@@ -164,6 +164,14 @@ delete_node() {
     oc delete $(oc get node -o name)
 }
 
+patch_machine_load_balancers() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - patch_machine_load_balancers - dry run set${NC}"
+        return
+    fi
+    oc patch $(oc get machine -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
+}
+
 wait_for_openshift_api() {
     local i=0
     HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
@@ -215,6 +223,7 @@ all() {
     find_instance_id "$CLUSTER_NAME-*-master-0"
     find_vpc_id "$CLUSTER_NAME-*-vpc"
 
+    patch_machine_load_balancers
     find_router_lb
     associate_router_instance
 
