@@ -170,6 +170,11 @@ patch_machine_load_balancers() {
         return
     fi
     oc -n openshift-machine-api patch $(oc -n openshift-machine-api get machine -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
+    if [ "$?" != 0 ]; then
+        echo -e "🕱${RED}Failed to patch_machine_load_balancers  ?${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN} -> patch_machine_load_balancers OK${NC}"
 }
 
 wait_for_openshift_api() {
@@ -233,10 +238,10 @@ all() {
         delete_node
         restart_instance
         wait_for_openshift_api
-        patch_machine_load_balancers
     else
         echo -e "${GREEN} -> $instance_id already set on node $node_provider_id, so not redoing it. OK${NC}"
     fi
+    patch_machine_load_balancers
     approve_all_certificates
 }
 
