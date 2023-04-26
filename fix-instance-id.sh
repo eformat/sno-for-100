@@ -223,7 +223,6 @@ all() {
     find_instance_id "$CLUSTER_NAME-*-master-0"
     find_vpc_id "$CLUSTER_NAME-*-vpc"
 
-    patch_machine_load_balancers
     find_router_lb
     associate_router_instance
 
@@ -234,6 +233,7 @@ all() {
         delete_node
         restart_instance
         wait_for_openshift_api
+        patch_machine_load_balancers
     else
         echo -e "${GREEN} -> $instance_id already set on node $node_provider_id, so not redoing it. OK${NC}"
     fi
