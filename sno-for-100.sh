@@ -193,6 +193,12 @@ download_ec2_converter() {
         return $ret
     fi
     chmod u+x ${RUN_DIR}/ec2-spot-converter
+    ret=$(curl --write-out "%{http_code}" https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/requirements.txt -o ${RUN_DIR}/requirements.txt)
+    if [ "$ret" != "200" ]; then
+        echo -e "🕱${RED}Failed - to download ec2-spot-converter requirements file ?.${NC}"
+        return $ret
+    fi
+    pip install -r ${RUN_DIR}/requirements.txt
 }
 
 download_openshift_installer() {
