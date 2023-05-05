@@ -70,7 +70,7 @@ restart_instance() {
     --instance-ids $instance_id
 
     if [ ! -z "$DRYRUN" ]; then
-        sleep 120 # fix me spot restart is not elegant
+        sleep 180 # fix me spot restart is not elegant
         echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
     fi
 
