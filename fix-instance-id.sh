@@ -70,7 +70,7 @@ restart_instance() {
     --instance-ids $instance_id
 
     if [ ! -z "$DRYRUN" ]; then
-        sleep 180 # fix me spot restart is not elegant
+        sleep 120 # fix me spot restart is not elegant
         echo -e "${GREEN} -> instance stopped [ $instance_id ] OK${NC}"
     fi
 
@@ -82,8 +82,21 @@ restart_instance() {
         if egrep -q "DryRunOperation" /tmp/aws-error-file; then
             echo -e "${GREEN}Ignoring - restart_instance start instance - dry run set${NC}"
         else
-            echo -e "🕱${RED}Failed - could not start $instance_id ?${NC}"
-            exit 1
+            until [ "$?" == 0 ]
+            do
+                echo -e "${GREEN} -> trying to start-instances ... [ $instance_id ]${NC}"
+                ((i=i+1))
+                if [ $i -gt 5 ]; then
+                    echo -e "🕱${RED}Failed - could not start $instance_id ?${NC}"
+                    exit 1
+                fi
+                sleep 10
+                aws ec2 start-instances \
+                ${DRYRUN:---dry-run} \
+                --region=${region} \
+                --instance-ids=$instance_id 2>&1 | tee /tmp/aws-error-file
+            done
+            echo -e "${GREEN} -> restart_instance starting [ $instance_id ] OK${NC}"
         fi
     else
         echo -e "${GREEN} -> restart_instance starting [ $instance_id ] OK${NC}"
