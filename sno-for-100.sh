@@ -198,7 +198,7 @@ download_ec2_converter() {
         echo -e "🕱${RED}Failed - to download ec2-spot-converter requirements file ?.${NC}"
         return $ret
     fi
-    pip install -r ${RUN_DIR}/requirements.txt
+    pip install --user -r ${RUN_DIR}/requirements.txt
 }
 
 download_openshift_installer() {
