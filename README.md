@@ -16,7 +16,7 @@ This step needs to be performed once in each region and account that you will be
 It serves as a temporal tracking table for the tool.
 
 ```bash
-export AWS_PROFILE=rhpds
+export AWS_PROFILE=default
 export AWS_DEFAULT_REGION=ap-southeast-1
 ec2-spot-converter --generate-dynamodb-table
 ```
@@ -83,8 +83,7 @@ export INSTANCE_ID=$(aws ec2 describe-instances \
 ```
 
 ```bash
-ec2-spot-converter --stop-instance \
---instance-id $INSTANCE_ID
+ec2-spot-converter --stop-instance --instance-id $INSTANCE_ID
 ```
 
 There are several other options for the tool not used here but which could be invoked:
@@ -104,11 +103,11 @@ After converting to spot, there are a few references to the old instance ID in t
 1. Export Env.Vars
 
     ```bash
-    export AWS_PROFILE=rhpds
+    export AWS_PROFILE=default
     export AWS_DEFAULT_REGION=ap-southeast-1
-    export BASE_DOMAIN=sandbox.acme.com
+    export BASE_DOMAIN=sandbox.acme.com #replace by a real domain and make sure you have a Hosted Zone for it at Route 53!
     export CLUSTER_NAME=my-cluster
-    export KUBECONFIG=<path to your>/cluster/auth/kubeconfig 
+    export KUBECONFIG=<path to your $RUNDIR>/cluster/auth/kubeconfig 
     ```
 
 2. Fix internal node instance references
@@ -133,7 +132,7 @@ After converting to spot, there are a few references to the old instance ID in t
 
 ## Delete SNO instance
 
-1. If you no longer need your instance, to remove all related aws objects just run.
+1. If you no longer need your instance, to remove all related aws objects just run **inside your `$RUNDIR`**.
 
     ```bash
     openshift-install destroy cluster --dir=cluster
@@ -144,10 +143,10 @@ After converting to spot, there are a few references to the old instance ID in t
 1. Try the all-in-one invocation.
 
     ```bash
-    export AWS_PROFILE=rhpds
+    export AWS_PROFILE=default
     export AWS_DEFAULT_REGION=ap-southeast-1
     export CLUSTER_NAME=my-cluster
-    export BASE_DOMAIN=sandbox.acme.com
+    export BASE_DOMAIN=sandbox.acme.com #replace by a real domain and make sure you have a Hosted Zone for it at Route 53!
     export INSTANCE_TYPE=m6a.2xlarge
     export PULL_SECRET=$(cat ~/tmp/pull-secret)
     export SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
