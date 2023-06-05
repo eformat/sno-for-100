@@ -8,6 +8,8 @@ readonly GREEN='\033[0;32m'
 readonly ORANGE='\033[38;5;214m'
 readonly NC='\033[0m' # No Color
 readonly RUN_DIR=$(pwd)
+export KUBECONFIG=$RUN_DIR/cluster/auth/kubeconfig
+
 # env vars
 DRYRUN=${DRYRUN:-}
 BASE_DOMAIN=${BASE_DOMAIN:-}
@@ -200,7 +202,7 @@ ec2_spot_converter() {
         return
     fi
     set -o pipefail
-    ${RUN_DIR}/ec2-spot-converter --delete-ami --stop-instance --instance-id $instance_id 2>&1 | tee /tmp/aws-error-file
+    ${RUN_DIR}/ec2-spot-converter --stop-instance --instance-id $instance_id 2>&1 | tee /tmp/aws-error-file
     if [ "$?" != 0 ]; then
         if egrep -q "is already a Spot instance" /tmp/aws-error-file; then
             echo -e "${GREEN}Ignoring - $instance_id is already a spot instance${NC}"
@@ -210,6 +212,8 @@ ec2_spot_converter() {
         fi
     else
         echo -e "${GREEN} -> ec2-spot-converter ran OK${NC}"
+        echo -e "${GREEN} -> \t run ec2-spot-converter again to clean up the generated ami and its snapshot...${NC}"
+        ${RUN_DIR}/ec2-spot-converter --delete-ami --instance-id $instance_id 2>&1 | tee /tmp/aws-error-file
     fi
     set +o pipefail
 }

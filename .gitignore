@@ -3,3 +3,4 @@ cluster/
 .env
 .run/
 .vscode/
+*.ignore
