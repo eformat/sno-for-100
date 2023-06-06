@@ -1,2 +1,6 @@
 cluster/
 .openshift_install.log
+.env
+.run/
+.vscode/
+*.ignore

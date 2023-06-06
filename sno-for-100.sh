@@ -8,6 +8,8 @@ readonly GREEN='\033[0;32m'
 readonly ORANGE='\033[38;5;214m'
 readonly NC='\033[0m' # No Color
 readonly RUN_DIR=$(pwd)
+export KUBECONFIG=$RUN_DIR/cluster/auth/kubeconfig
+
 # env vars
 DRYRUN=${DRYRUN:-}
 BASE_DOMAIN=${BASE_DOMAIN:-}
@@ -16,10 +18,68 @@ PULL_SECRET=${PULL_SECRET:-}
 SSH_KEY=${SSH_KEY:-}
 ROOT_VOLUME_SIZE=${ROOT_VOLUME_SIZE:-100}
 INSTANCE_TYPE=${INSTANCE_TYPE:-"m5a.2xlarge"}
-OPENSHIFT_VERSION=${OPENSHIFT_VERSION:"stable"}
+OPENSHIFT_VERSION=${OPENSHIFT_VERSION:-"stable"}
 # prog vars
 region=
 instance_id=
+
+# sanity environment check section
+CYGWIN_ON=no
+MACOS_ON=no
+LINUX_ON=no
+system_os_flavor=linux
+system_os_arch=$(uname -m)
+min_bash_version=4
+
+# - try to detect CYGWIN
+a=$(uname -a) && al=$(echo "$a" | awk '{ print tolower($0); }') && ac=${al%cygwin} && [[ "$al" != "$ac" ]] && CYGWIN_ON=yes
+if [[ "$CYGWIN_ON" == "yes" ]]; then
+  echo "CYGWIN  ${system_os_arch} DETECTED - WILL TRY TO ADJUST PATHS"
+  system_os_flavor=windows
+  min_bash_version=4
+fi
+
+# - try to detect MacOS
+a=$(uname) && al=$(echo "$a" | awk '{ print tolower($0); }') && ac=${al%darwin} && [[ "$al" != "$ac" ]] && MACOS_ON=yes
+[[ "$MACOS_ON" == "yes" ]] && system_os_flavor=mac && min_bash_version=5 && echo -e "${ORANGE}\nmacOS ${system_os_arch} DETECTED${NC}\n"
+
+# - try to detect Linux
+a=$(uname) && al=$(echo "$a" | awk '{ print tolower($0); }') && ac=${al%linux} && [[ "$al" != "$ac" ]] && LINUX_ON=yes
+[[ "$LINUX_ON" == "yes" ]] && min_bash_version=4
+
+bash_version=$(bash -c 'echo ${BASH_VERSINFO[0]}')
+bash_ok=no && [ "${bash_version}" -ge $min_bash_version ] && bash_ok=yes
+[[ "$bash_ok" != "yes" ]] && echo "ERROR: BASH VERSION NOT SUPPORTED - PLEASE UPGRADE YOUR BASH INSTALLATION - ABORTING" && exit 1 
+
+command -v yq &> /dev/null || { echo >&2 'ERROR: yq not installed. Please install yq tool to continue - Aborting'; exit 1; }
+
+SED='sed'
+if [[ "$MACOS_ON" == "no" ]]; then
+  SED='sed'
+  command -v sed  &> /dev/null      || { echo >&2 'ERROR: sed not installed. Please install sed 4.2 (or later) to continue - Aborting'; exit 1; }
+fi
+
+if [[ "$MACOS_ON" == "yes" ]]; then
+  macshed=no
+  command -v sed  &> /dev/null && SED='sed'  && macshed=yes
+  command -v gsed &> /dev/null && SED='gsed' && macshed=yes
+  [[ "$macshed" == "no" ]] && echo >&2 'ERROR: gsed not installed. Please install GNU sed.4.8 (or later)  to continue - Aborting' && exit 1
+
+  # - check sed version on Mac
+  macstatus=256
+  "$SED" --version &> /dev/null; macstatus=$?
+  if [[ "$macstatus" -eq 0 ]]; then
+    maxv=$("$SED" --version | head -1 | awk '{print $NF}' | cut -d'.' -f 1)
+    minv=$("$SED" --version | head -1 | awk '{print $NF}' | cut -d'.' -f 2)
+    [[ "$maxv" -ge "4" ]] && [[ "$minv" -ge "8" ]] && macsed=yes
+    unset maxv minv
+  else
+    macshed=no
+  fi
+  [[ "$macshed" == "yes" ]] || { echo >&2 'ERROR: GNU sed not found. Please install GNU sed.4.8 (or later) to continue - Aborting'; exit 2; }
+  unset macshed macstatus
+fi
+# sanity environment section end
 
 find_region() {
     if [ ! -z "$AWS_DEFAULT_REGION" ]; then
@@ -71,13 +131,13 @@ generate_dynamodb() {
 }
 
 prepare_install_config() {
-    sed -i "s|baseDomain:.*|baseDomain: $BASE_DOMAIN|" ${RUN_DIR}/install-config.yaml
-    sed -i "s|^      type:.*|      type: $INSTANCE_TYPE|" ${RUN_DIR}/install-config.yaml
-    sed -i "s|^        size:.*|        size: $ROOT_VOLUME_SIZE|" ${RUN_DIR}/install-config.yaml
-    sed -i "s|^  name:.*|  name: $CLUSTER_NAME|" ${RUN_DIR}/install-config.yaml
-    sed -i "s|    region:.*|    region: $region|" ${RUN_DIR}/install-config.yaml
-    sed -i "s|pullSecret:.*|pullSecret: '$PULL_SECRET'|" ${RUN_DIR}/install-config.yaml
-    sed -i "s|sshKey:.*|sshKey: '$SSH_KEY'|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|baseDomain:.*|baseDomain: $BASE_DOMAIN|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|^      type:.*|      type: $INSTANCE_TYPE|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|^        size:.*|        size: $ROOT_VOLUME_SIZE|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|^  name:.*|  name: $CLUSTER_NAME|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|    region:.*|    region: $region|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|pullSecret:.*|pullSecret: '$PULL_SECRET'|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|sshKey:.*|sshKey: '$SSH_KEY'|" ${RUN_DIR}/install-config.yaml
     if [ ! -z "$AWS_DEFAULT_ZONES" ]; then
         yq e '.controlPlane.platform.aws.zones = env(AWS_DEFAULT_ZONES)' -i ${RUN_DIR}/install-config.yaml
     fi
@@ -152,6 +212,8 @@ ec2_spot_converter() {
         fi
     else
         echo -e "${GREEN} -> ec2-spot-converter ran OK${NC}"
+        echo -e "${GREEN} -> \t run ec2-spot-converter again to clean up the generated ami and its snapshot...${NC}"
+        ${RUN_DIR}/ec2-spot-converter --delete-ami --instance-id $instance_id 2>&1 | tee /tmp/aws-error-file
     fi
     set +o pipefail
 }
@@ -192,6 +254,9 @@ download_ec2_converter() {
         echo -e "🕱${RED}Failed - to download ec2-spot-converter ?.${NC}"
         return $ret
     fi
+    #patch script header to use /usr/bin/env instead of referring to /usr/bin/python3 directly
+    #this avoid issues with multiple python present in the path
+    "$SED" -i 's|\#\!/usr/bin/python3|\#\!/usr/bin/env python3|' ${RUN_DIR}/ec2-spot-converter
     chmod u+x ${RUN_DIR}/ec2-spot-converter
     ret=$(curl --write-out "%{http_code}" https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/requirements.txt -o ${RUN_DIR}/requirements.txt)
     if [ "$ret" != "200" ]; then
@@ -202,28 +267,28 @@ download_ec2_converter() {
 }
 
 download_openshift_installer() {
-    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OPENSHIFT_VERSION}/openshift-install-linux.tar.gz -o ${RUN_DIR}/openshift-install-linux.tar.gz)
+    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/${system_os_arch}/clients/ocp/${OPENSHIFT_VERSION}/openshift-install-${system_os_flavor}.tar.gz -o ${RUN_DIR}/openshift-install-${system_os_flavor}.tar.gz)
     if [ "$ret" != "200" ]; then
-        echo -e "🕱${RED}Failed - to download openshift-install-linux.tar.gz ?.${NC}"
+        echo -e "🕱${RED}Failed - to download openshift-install-${system_os_flavor}.tar.gz ?.${NC}"
         return $ret
     fi
-    tar xzvf openshift-install-linux.tar.gz
+    tar xzvf openshift-install-${system_os_flavor}.tar.gz
     if [ "$?" != 0 ]; then
-        echo -e "🕱${RED}Failed - to unzip openshift-install-linux.tar.gz ?${NC}"
+        echo -e "🕱${RED}Failed - to unzip openshift-install-${system_os_flavor}.tar.gz ?${NC}"
         exit 1
     fi
     chmod u+x ${RUN_DIR}/openshift-install
 }
 
 download_openshift_cli() {
-    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OPENSHIFT_VERSION}/openshift-client-linux.tar.gz -o ${RUN_DIR}/openshift-client-linux.tar.gz)
+    local ret=$(curl --write-out "%{http_code}" https://mirror.openshift.com/pub/openshift-v4/${system_os_arch}/clients/ocp/${OPENSHIFT_VERSION}/openshift-client-${system_os_flavor}.tar.gz -o ${RUN_DIR}/openshift-client-${system_os_flavor}.tar.gz)
     if [ "$ret" != "200" ]; then
-        echo -e "🕱${RED}Failed - to download openshift-client-linux.tar.gz ?.${NC}"
+        echo -e "🕱${RED}Failed - to download openshift-client-${system_os_flavor}.tar.gz ?.${NC}"
         return $ret
     fi
-    tar xzvf openshift-client-linux.tar.gz
+    tar xzvf openshift-client-${system_os_flavor}.tar.gz
     if [ "$?" != 0 ]; then
-        echo -e "🕱${RED}Failed - to unzip openshift-client-linux.tar.gz ?${NC}"
+        echo -e "🕱${RED}Failed - to unzip openshift-client-${system_os_flavor}.tar.gz ?${NC}"
         #exit 1
     fi
     chmod u+x ${RUN_DIR}/oc
@@ -360,8 +425,8 @@ shift `expr $OPTIND - 1`
 [ ! -r "$RUN_DIR/adjust-single-node.sh" ] && echo -e "💀${ORANGE}: adjust-single-node.sh not found downloading${NC}" && download_adjust_single_node
 [ ! -r "$RUN_DIR/fix-instance-id.sh" ] && echo -e "💀${ORANGE}: fix-instance-id.sh not found downloading${NC}" && download_fix_instance_id
 [ ! -r "$RUN_DIR/ec2-spot-converter" ] && echo -e "💀${ORANGE}: ec2-spot-converter not found downloading${NC}" && download_ec2_converter
-[ ! -r "$RUN_DIR/openshift-install-linux.tar.gz" ] && echo -e "💀${ORANGE}: openshift-install-linux.tar.gz not found downloading${NC}" && download_openshift_installer
-[ ! -r "$RUN_DIR/openshift-client-linux.tar.gz" ] && echo -e "💀${ORANGE}: openshift-client-linux.tar.gz not found downloading${NC}" && download_openshift_cli
+[ ! -r "$RUN_DIR/openshift-install-${system_os_flavor}.tar.gz" ] && echo -e "💀${ORANGE}: openshift-install-${system_os_flavor}.tar.gz not found downloading${NC}" && download_openshift_installer
+[ ! -r "$RUN_DIR/openshift-client-${system_os_flavor}.tar.gz" ] && echo -e "💀${ORANGE}: openshift-client-${system_os_flavor}.tar.gz not found downloading${NC}" && download_openshift_cli
 
 all
 
