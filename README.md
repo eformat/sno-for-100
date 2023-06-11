@@ -160,5 +160,5 @@ After converting to spot, there are a few references to the old instance ID in t
 You may want to try out these common day.2 enhancements for your SNO on SPOT instance.
 
 - [Extra Storage](EXTRA_STORAGE.md)
-- [Performance Enhancements](PERFORMANCE_ENHANCEMENTS.md)
+- [Performance Enhancements](PERF_ENHANCEMENTS.md)
 - [Cluster Route Certificates with Let's Encrypt](CLUSTER_CERTS.md)
