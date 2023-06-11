@@ -134,8 +134,16 @@ To keep things cheap, I use a 200GB gp3 volume and configure the OpenShift LVM O
 
 11. Make the LVM storage the default storage class.
 
+    OpenShift v4.11
+
     ```bash
     oc annotate sc/odf-lvm-vgsno storageclass.kubernetes.io/is-default-class=true
+    ```
+
+    OpenShift v4.12+
+
+    ```bash
+    oc annotate sc/lvms-vgsno storageclass.kubernetes.io/is-default-class=true
     ```
 
     Remove old defaults (the default SC varies depending on OpenShift Cluster version)
