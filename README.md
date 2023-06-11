@@ -1,4 +1,4 @@
-# sno-for-100
+# SNO on SPOT
 
 Single Node OpenShift on AWS Spot for < $100/mon
 
@@ -154,3 +154,11 @@ After converting to spot, there are a few references to the old instance ID in t
     mkdir my-run && cd my-run
     curl -Ls https://raw.githubusercontent.com/eformat/sno-for-100/main/sno-for-100.sh | bash -s -- -d
     ```
+
+## Day#2 Enhancements
+
+You may want to try out these common day.2 enhancements for your SNO on SPOT instance.
+
+- [Extra Storage](EXTRA_STORAGE.md)
+- [Performance Enhancements](PERFORMANCE_ENHANCEMENTS.md)
+- [Cluster Route Certificates with Let's Encrypt](CLUSTER_CERTS.md)
