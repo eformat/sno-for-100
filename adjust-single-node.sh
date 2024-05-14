@@ -523,7 +523,7 @@ delete_target_groups() {
     if [ ! -z "$target_groups" ]; then
         echo $target_groups | jq '.[]' | while read -r tg; do aws elbv2 delete-target-group --target-group-arn $(echo $tg | tr -d '"'); done
         if [ "$?" != 0 ]; then
-            echo -e "🕱${RED}Failed - could not delete load balancer $x ?${NC}"
+            echo -e "🕱${RED}Failed - could not delete target groups $target_groups ?${NC}"
             exit 1
         else
             echo -e "${GREEN} -> delete_target_groups [ $target_groups ] OK${NC}"
