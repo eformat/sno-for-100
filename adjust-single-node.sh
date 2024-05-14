@@ -513,6 +513,24 @@ delete_network_load_balancers() {
     fi
 }
 
+delete_target_groups() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - delete_target_groups - dry run set${NC}"
+        return
+    fi
+    query='TargetGroups|[].TargetGroupArn'
+    target_groups=$(aws elbv2 describe-target-groups --query $query)
+    if [ ! -z "$target_groups" ]; then
+        echo $target_groups | jq '.[]' | while read -r tg; do aws elbv2 delete-target-group --target-group-arn $(echo $tg | tr -d '"'); done
+        if [ "$?" != 0 ]; then
+            echo -e "🕱${RED}Failed - could not delete load balancer $x ?${NC}"
+            exit 1
+        else
+            echo -e "${GREEN} -> delete_target_groups [ $target_groups ] OK${NC}"
+        fi
+    fi
+}
+
 # do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
@@ -546,6 +564,7 @@ all() {
 
     find_network_load_balancers
     delete_network_load_balancers
+    delete_target_groups
 }
 
 usage() {
