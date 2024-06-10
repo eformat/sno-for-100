@@ -10,6 +10,23 @@ Single Node OpenShift on AWS Spot for < $100/mon
 - [OpenShift command line and installer](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/)
 - [ec2-spot-converter script](https://github.com/jcjorel/ec2-spot-converter/)
 
+## 💥💥 Try the all-in-one installation 💥💥
+
+1. Try the all-in-one invocation.
+
+    ```bash
+    export AWS_PROFILE=default
+    export AWS_DEFAULT_REGION=ap-southeast-1
+    export CLUSTER_NAME=my-cluster
+    export BASE_DOMAIN=sandbox.acme.com #replace by a real domain and make sure you have a Hosted Zone for it at Route 53!
+    export INSTANCE_TYPE=m6a.2xlarge
+    export PULL_SECRET=$(cat ~/tmp/pull-secret)
+    export SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
+
+    mkdir my-run && cd my-run
+    curl -Ls https://raw.githubusercontent.com/eformat/sno-for-100/main/sno-for-100.sh | bash -s -- -d
+    ```
+
 ### Generate DynamoDB Table
 
 This step needs to be performed once in each region and account that you will be provisioning instances.
@@ -136,23 +153,6 @@ After converting to spot, there are a few references to the old instance ID in t
 
     ```bash
     openshift-install destroy cluster --dir=cluster
-    ```
-
-## 💥💥 Try the all-in-one installation 💥💥
-
-1. Try the all-in-one invocation.
-
-    ```bash
-    export AWS_PROFILE=default
-    export AWS_DEFAULT_REGION=ap-southeast-1
-    export CLUSTER_NAME=my-cluster
-    export BASE_DOMAIN=sandbox.acme.com #replace by a real domain and make sure you have a Hosted Zone for it at Route 53!
-    export INSTANCE_TYPE=m6a.2xlarge
-    export PULL_SECRET=$(cat ~/tmp/pull-secret)
-    export SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
-
-    mkdir my-run && cd my-run
-    curl -Ls https://raw.githubusercontent.com/eformat/sno-for-100/main/sno-for-100.sh | bash -s -- -d
     ```
 
 ## Day#2 Enhancements
