@@ -149,7 +149,7 @@ After converting to spot, there are a few references to the old instance ID in t
 
 ## Delete SNO instance
 
-1. If you no longer need your instance, to remove all related aws objects just run **inside your `$RUNDIR`**.
+1. If you no longer need your instance, to remove all related aws objects just run inside your `$RUNDIR`.
 
     ```bash
     openshift-install destroy cluster --dir=cluster
