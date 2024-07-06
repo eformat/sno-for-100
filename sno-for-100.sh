@@ -195,6 +195,17 @@ adjust_single_node() {
     fi
 }
 
+adjust_single_node_416() {
+    echo "🌴 Running adjust-single-node-4.16.sh ..."
+    ${RUN_DIR}/adjust-single-node-4.16.sh
+    if [ "$?" != 0 ]; then
+        echo -e "🕱${RED}Failed - to run adjust-single-node-4.16.sh ?${NC}"
+        exit 1
+    else
+        echo "🌴 adjust-single-node-4.16.sh ran OK"
+    fi
+}
+
 ec2_spot_converter() {
     echo "🌴 Running ec2-spot-converter ..."
     if [ -z "$DRYRUN" ]; then
@@ -233,6 +244,15 @@ download_adjust_single_node() {
     local ret=$(curl --write-out "%{http_code}" https://raw.githubusercontent.com/eformat/sno-for-100/main/adjust-single-node.sh -o ${RUN_DIR}/adjust-single-node.sh)
     if [ "$ret" != "200" ]; then
         echo -e "🕱${RED}Failed - to download adjust-single-node.sh ?.${NC}"
+        return $ret
+    fi
+    chmod u+x ${RUN_DIR}/adjust-single-node.sh
+}
+
+download_adjust_single_node_416() {
+    local ret=$(curl --write-out "%{http_code}" https://raw.githubusercontent.com/eformat/sno-for-100/main/adjust-single-node-4.16.sh -o ${RUN_DIR}/adjust-single-node-4.16.sh)
+    if [ "$ret" != "200" ]; then
+        echo -e "🕱${RED}Failed - to download adjust-single-node-4.16.sh ?.${NC}"
         return $ret
     fi
     chmod u+x ${RUN_DIR}/adjust-single-node.sh
@@ -302,13 +322,22 @@ download_install_config() {
     fi
 }
 
+version() { 
+    echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }';
+}
+
 # do it all
 all() {
     find_region
     generate_dynamodb
 
     install_openshift
-    adjust_single_node
+
+    if [ "$OPENSHIFT_VERSION" == "stable" ] || [ $(version "$OPENSHIFT_VERSION") -gt $(version "4.15") ]; then
+        adjust_single_node_416
+    else
+        adjust_single_node
+    fi
 
     find_instance_id "$CLUSTER_NAME-*-master-0"
     ec2_spot_converter
@@ -423,6 +452,7 @@ shift `expr $OPTIND - 1`
 # Download tools if the do not exist
 [ ! -r "$RUN_DIR/install-config.yaml" ] && echo -e "💀${ORANGE}: install-config.yaml not found downloading${NC}" && download_install_config
 [ ! -r "$RUN_DIR/adjust-single-node.sh" ] && echo -e "💀${ORANGE}: adjust-single-node.sh not found downloading${NC}" && download_adjust_single_node
+[ ! -r "$RUN_DIR/adjust-single-node-4.16.sh" ] && echo -e "💀${ORANGE}: adjust-single-node-4.16.sh not found downloading${NC}" && download_adjust_single_node_416
 [ ! -r "$RUN_DIR/fix-instance-id.sh" ] && echo -e "💀${ORANGE}: fix-instance-id.sh not found downloading${NC}" && download_fix_instance_id
 [ ! -r "$RUN_DIR/ec2-spot-converter" ] && echo -e "💀${ORANGE}: ec2-spot-converter not found downloading${NC}" && download_ec2_converter
 [ ! -r "$RUN_DIR/openshift-install-${system_os_flavor}.tar.gz" ] && echo -e "💀${ORANGE}: openshift-install-${system_os_flavor}.tar.gz not found downloading${NC}" && download_openshift_installer
