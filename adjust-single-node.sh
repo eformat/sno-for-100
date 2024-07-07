@@ -20,14 +20,13 @@ master_sg=
 eip=
 eip_alloc=
 public_route_table_id=
-private_route_table_id=
+private_route_table_ids=
 public_hosted_zone=
 private_hosted_zone=
 private_instance_ip=
 nat_gateways=
 network_load_balancers=
 router_load_balancer=
-zones=
 
 find_region() {
     if [ ! -z "$AWS_DEFAULT_REGION" ]; then
@@ -73,28 +72,15 @@ find_vpc_id() {
 }
 
 find_master_sg() {
-    tag_value="$CLUSTER_NAME-*-master"
-
+    local tag_value="$1"
     master_sg=$(aws ec2 describe-security-groups \
     --region=${region} \
     --query "SecurityGroups[].GroupId" \
     --filters "Name=vpc-id,Values=${vpc_id}" \
     --filters "Name=tag-value,Values=$tag_value" \
     --output text)
-
-    if [ -z $master_sg ]; then
-        tag_value="$CLUSTER_NAME-*-node"
-
-        master_sg=$(aws ec2 describe-security-groups \
-        --region=${region} \
-        --query "SecurityGroups[].GroupId" \
-        --filters "Name=vpc-id,Values=${vpc_id}" \
-        --filters "Name=tag-value,Values=$tag_value" \
-        --output text)
-    fi
-
-    if [ -z $master_sg ]; then
-        echo -e "🕱${RED}Failed - could not find master/node security group associated with vpc: $vpc_id and tag: $tag_value ?${NC}"
+    if [ -z $vpc_id ]; then
+        echo -e "🕱${RED}Failed - could not find master security group associated with vpc: $vpc_id and tag: $tag_value ?${NC}"
         exit 1
     else
         echo "🌴 MasterSecurityGroup set to $master_sg"
@@ -242,48 +228,41 @@ find_public_route_table() {
     fi
 }
 
-find_private_route_table() {
+find_private_route_tables() {
     local tag_value="$1"
-    private_route_table_id=$(aws ec2 describe-route-tables --region=${region} \
+    private_route_table_ids=$(aws ec2 describe-route-tables --region=${region} \
     --query "RouteTables[].Associations[].RouteTableAssociationId" \
     --filters "Name=tag-value,Values=$tag_value" "Name=vpc-id,Values=${vpc_id}" \
     --output text)
-    if [ -z "$private_route_table_id" ]; then
-        echo -e "💀${ORANGE}Warning - could not find private route table assoc id for tag: $tag_value - continuing, they may have been deleted already ?${NC}"
+    if [ -z "$private_route_table_ids" ]; then
+        echo -e "💀${ORANGE}Warning - could not find private route table assoc ids for tag: $tag_value - continuing, they may have been deleted already ?${NC}"
     else
-        echo "🌴 PrivateRouteTableId set to $private_route_table_id"
+        echo "🌴 PrivateRouteTableIds set to $private_route_table_ids"
     fi
 }
 
-update_private_route() {
+update_private_routes() {
     set -o pipefail
-    if [ ! -z "$private_route_table_id" ]; then
-        aws ec2 replace-route-table-association \
-        ${DRYRUN:---dry-run} \
-        --association-id $private_route_table_id \
-        --route-table-id $public_route_table_id \
-        --region=${region} 2>&1 | tee /tmp/aws-error-file
-        if [ "$?" != 0 ]; then
-            if egrep -q "DryRunOperation" /tmp/aws-error-file; then
-                echo -e "${GREEN}Ignoring - update_private_route - dry run set${NC}"
+    if [ ! -z "$private_route_table_ids" ]; then
+        for x in $private_route_table_ids; do
+            aws ec2 replace-route-table-association \
+            ${DRYRUN:---dry-run} \
+            --association-id $x \
+            --route-table-id $public_route_table_id \
+            --region=${region} 2>&1 | tee /tmp/aws-error-file
+            if [ "$?" != 0 ]; then
+                if egrep -q "DryRunOperation" /tmp/aws-error-file; then
+                    echo -e "${GREEN}Ignoring - update_private_routes - dry run set${NC}"
+                else
+                    echo -e "🕱${RED}Failed - could not associate private $x with public route table $public_route_table_id ?${NC}"
+                    exit 1
+                fi
             else
-                echo -e "🕱${RED}Failed - could not associate private $private_route_table_id with public route table $public_route_table_id ?${NC}"
-                exit 1
+                echo -e "${GREEN} -> update_private_routes [ $x,  $public_route_table_id ] OK${NC}"
             fi
-        else
-            echo -e "${GREEN} -> update_private_route [ $private_route_table_id,  $public_route_table_id ] OK${NC}"
-        fi
+        done
     fi
     set +o pipefail
-}
-
-update_all_private_routes() {
-    echo $zones | jq '.[]' | while read -r zone; do
-      zn=$(echo $zone | tr -d '"')
-      find_public_route_table "$CLUSTER_NAME-*-public-$zn"
-      find_private_route_table "$CLUSTER_NAME-*-private-$zn"
-      update_private_route
-    done
 }
 
 find_public_route53_hostedzone() {
@@ -552,20 +531,6 @@ delete_target_groups() {
     fi
 }
 
-find_zones() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - find_zones - dry run set${NC}"
-        return
-    fi
-    query='AvailabilityZones[].ZoneName'
-    zones=$(aws ec2 describe-availability-zones --query $query)
-    if [ -z "$zones" ]; then
-        echo -e "🕱${RED}Failed - could not find zones ?${NC}"
-        exit 1
-    fi
-    echo -e "${GREEN} -> find_zones [ $zones ] OK${NC}"
-}
-
 # do it all
 all() {
     echo "🌴 BASE_DOMAIN set to $BASE_DOMAIN"
@@ -573,16 +538,18 @@ all() {
 
     # find ids
     find_region
-    find_zones
     find_instance_id "$CLUSTER_NAME-*-master-0"
     find_vpc_id "$CLUSTER_NAME-*-vpc"
-    find_master_sg
+    find_master_sg "$CLUSTER_NAME-*-master-sg"
 
     # updates
     update_master_sg
     find_or_allocate_eip
     associate_eip
-    update_all_private_routes
+
+    find_public_route_table "$CLUSTER_NAME-*-public"
+    find_private_route_tables "$CLUSTER_NAME-*-private-*"
+    update_private_routes
 
     find_public_route53_hostedzone "$BASE_DOMAIN"
     update_route53_public "$CLUSTER_NAME.$BASE_DOMAIN"
@@ -590,7 +557,7 @@ all() {
     find_private_route53_hostedzone "$CLUSTER_NAME.$BASE_DOMAIN"
     update_route53_private "$CLUSTER_NAME.$BASE_DOMAIN"
 
-    find_nat_gateways "$CLUSTER_NAME-*-nat"
+    find_nat_gateways "$CLUSTER_NAME-*-nat-*"
     delete_nat_gateways
     wait_for_nat_gateway_delete
     release_eips "$CLUSTER_NAME-*-eip-*"
