@@ -255,7 +255,7 @@ download_adjust_single_node_416() {
         echo -e "🕱${RED}Failed - to download adjust-single-node-4.16.sh ?.${NC}"
         return $ret
     fi
-    chmod u+x ${RUN_DIR}/adjust-single-node.sh
+    chmod u+x ${RUN_DIR}/adjust-single-node-4.16.sh
 }
 
 download_fix_instance_id() {
