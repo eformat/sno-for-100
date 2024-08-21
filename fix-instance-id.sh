@@ -13,6 +13,7 @@ DRYRUN=${DRYRUN:-}
 KUBECONFIG=${KUBECONFIG:-}
 BASE_DOMAIN=${BASE_DOMAIN:-}
 CLUSTER_NAME=${CLUSTER_NAME:-}
+readonly RUN_DIR=$(pwd)
 # prog vars
 region=
 instance_id=
@@ -152,7 +153,7 @@ associate_router_instance() {
 }
 
 find_node_providerid() {
-    node_provider_id=$(oc get nodes -o jsonpath='{.items[0].spec.providerID}')
+    node_provider_id=$(${RUN_DIR}/oc get nodes -o jsonpath='{.items[0].spec.providerID}')
     if [ -z "$node_provider_id" ]; then
         echo -e "🕱${RED}Failed - could not find openshift node providerid ?${NC}"
         exit 1
@@ -166,7 +167,7 @@ update_providerid_on_node() {
         echo -e "${GREEN}Ignoring - update_providerid_on_node - dry run set${NC}"
         return
     fi
-    oc -n default debug -T $(oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
+    ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
 }
 
 delete_node() {
@@ -174,7 +175,7 @@ delete_node() {
         echo -e "${GREEN}Ignoring - delete_node - dry run set${NC}"
         return
     fi
-    oc delete $(oc get node -o name)
+    ${RUN_DIR}/oc delete $(${RUN_DIR}/oc get node -o name)
 }
 
 patch_machine_load_balancers() {
@@ -182,7 +183,7 @@ patch_machine_load_balancers() {
         echo -e "${GREEN}Ignoring - patch_machine_load_balancers - dry run set${NC}"
         return
     fi
-    oc -n openshift-machine-api patch $(oc -n openshift-machine-api get machine -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
+    ${RUN_DIR}/oc -n openshift-machine-api patch $(${RUN_DIR}/oc -n openshift-machine-api get machine -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
     if [ "$?" != 0 ]; then
         echo -e "🕱${RED}Failed to patch_machine_load_balancers  ?${NC}"
         exit 1
@@ -211,7 +212,7 @@ approve_all_certificates() {
         return
     fi
     local i=0
-    oc get csr
+    ${RUN_DIR}/oc get csr
     until [ "$?" == 0 ]
     do
         echo -e "${GREEN}Waiting for 0 rc from oc commands.${NC}"
@@ -221,9 +222,9 @@ approve_all_certificates() {
             exit 1
         fi
         sleep 5
-        oc get csr
+        ${RUN_DIR}/oc get csr
     done
-    oc get csr -o name | xargs oc adm certificate approve
+    ${RUN_DIR}/oc get csr -o name | xargs ${RUN_DIR}/oc adm certificate approve
     if [ "$?" != 0 ]; then
         echo -e "🕱${RED}Failed to approve  ?${NC}"
         exit 1
