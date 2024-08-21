@@ -22,6 +22,7 @@ OPENSHIFT_VERSION=${OPENSHIFT_VERSION:-"stable"}
 # prog vars
 region=
 instance_id=
+architecture=
 
 # sanity environment check section
 CYGWIN_ON=no
@@ -51,7 +52,10 @@ bash_version=$(bash -c 'echo ${BASH_VERSINFO[0]}')
 bash_ok=no && [ "${bash_version}" -ge $min_bash_version ] && bash_ok=yes
 [[ "$bash_ok" != "yes" ]] && echo "ERROR: BASH VERSION NOT SUPPORTED - PLEASE UPGRADE YOUR BASH INSTALLATION - ABORTING" && exit 1 
 
+# sanity check tools
 command -v yq &> /dev/null || { echo >&2 'ERROR: yq not installed. Please install yq tool to continue - Aborting'; exit 1; }
+command -v tar &> /dev/null || { echo >&2 'ERROR: tar not installed. Please install tar tool to continue - Aborting'; exit 1; }
+command -v curl &> /dev/null || { echo >&2 'ERROR: curl not installed. Please install curl tool to continue - Aborting'; exit 1; }
 
 SED='sed'
 if [[ "$MACOS_ON" == "no" ]]; then
@@ -79,6 +83,12 @@ if [[ "$MACOS_ON" == "yes" ]]; then
   [[ "$macshed" == "yes" ]] || { echo >&2 'ERROR: GNU sed not found. Please install GNU sed.4.8 (or later) to continue - Aborting'; exit 2; }
   unset macshed macstatus
 fi
+
+# set architecture for install-config
+[[ "$CYGWIN_ON" == "yes" ]] && architecture=amd64
+[[ "$system_os_arch" == "x86_64" ]] && architecture=amd64
+[[ "$system_os_arch" == "aarch64" ]] && architecture=arm64
+
 # sanity environment section end
 
 find_region() {
@@ -132,6 +142,7 @@ generate_dynamodb() {
 
 prepare_install_config() {
     "$SED" -i "s|baseDomain:.*|baseDomain: $BASE_DOMAIN|" ${RUN_DIR}/install-config.yaml
+    "$SED" -i "s|  architecture:.*|  architecture: $architecture|" ${RUN_DIR}/install-config.yaml
     "$SED" -i "s|^      type:.*|      type: $INSTANCE_TYPE|" ${RUN_DIR}/install-config.yaml
     "$SED" -i "s|^        size:.*|        size: $ROOT_VOLUME_SIZE|" ${RUN_DIR}/install-config.yaml
     "$SED" -i "s|^  name:.*|  name: $CLUSTER_NAME|" ${RUN_DIR}/install-config.yaml
