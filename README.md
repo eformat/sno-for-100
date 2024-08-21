@@ -113,7 +113,7 @@ There are several other options for the tool not used here but which could be in
 * change the encryption key for the root volume
 * convert from spot back to on-demand
 
-Documentation of the settings and how to use them are on the ec2-spot-converter tool's homepage.
+Documentation of the settings and how to use them are on the ec2-spot-converter tool's [homepage](https://github.com/jcjorel/ec2-spot-converter).
 
 ## Fix the internal node instance references
 
