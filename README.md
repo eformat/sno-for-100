@@ -84,6 +84,8 @@ It will remove the unneeded portions of the networking infrastructure.
     ./adjust-single-node.sh -d
     ```
 
+    Note: there is a v4.16+ version of this script as well.
+
 5. Check
 
     It may take a couple of minutes for SNO to settle down (authentication, ingress operators become available).
