@@ -2,7 +2,9 @@
 
 Single Node OpenShift on AWS Spot for < $100/mon
 
-## Prerequisites:
+Supports AMD64 and [ARM64](ARM64.md)
+
+## Prerequisites
 
 - [AWS command line](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - [AWS account login](https://aws.amazon.com/console/)
