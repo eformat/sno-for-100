@@ -128,7 +128,7 @@ generate_dynamodb() {
     set -o pipefail
     ${RUN_DIR}/ec2-spot-converter --generate-dynamodb-table 2>&1 | tee /tmp/aws-error-file
     if [ "$?" != 0 ]; then
-        if egrep -q "Table already exists" /tmp/aws-error-file; then
+        if grep -E -q "Table already exists" /tmp/aws-error-file; then
             echo -e "${GREEN}Ignoring - dynamodb table already exists${NC}"
         else
             echo -e "🕱${RED}Failed - to run generate_dynamodb ?${NC}"
@@ -226,7 +226,7 @@ ec2_spot_converter() {
     set -o pipefail
     ${RUN_DIR}/ec2-spot-converter --stop-instance --instance-id $instance_id 2>&1 | tee /tmp/aws-error-file
     if [ "$?" != 0 ]; then
-        if egrep -q "is already a Spot instance" /tmp/aws-error-file; then
+        if grep -E -q "is already a Spot instance" /tmp/aws-error-file; then
             echo -e "${GREEN}Ignoring - $instance_id is already a spot instance${NC}"
         else
             echo -e "🕱${RED}Failed - to run ec2-spot-converter ?${NC}"
@@ -320,7 +320,6 @@ download_openshift_cli() {
     tar xzvf openshift-client-${system_os_flavor}.tar.gz
     if [ "$?" != 0 ]; then
         echo -e "🕱${RED}Failed - to unzip openshift-client-${system_os_flavor}.tar.gz ?${NC}"
-        #exit 1
     fi
     chmod u+x ${RUN_DIR}/oc
 }
