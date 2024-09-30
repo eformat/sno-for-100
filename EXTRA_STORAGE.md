@@ -89,10 +89,10 @@ To keep things cheap, I use a 200GB gp3 volume and configure the OpenShift LVM O
     EOF
     ```
 
-    OpenShift v4.12+ e.g. set channel - stable-4.12, stable-4.13
+    OpenShift v4.12+ e.g. set channel - stable-4.12, stable-4.14, stable-4.16
 
     ```bash
-    CHANNEL=stable-4.13
+    CHANNEL=stable-4.16
     cat <<EOF | oc apply -f-
     apiVersion: operators.coreos.com/v1alpha1
     kind: Subscription
@@ -102,7 +102,7 @@ To keep things cheap, I use a 200GB gp3 volume and configure the OpenShift LVM O
       name: lvms-operator
       namespace: openshift-storage
     spec:
-      channel: stable-4.13
+      channel: $CHANNEL
       installPlanApproval: Automatic
       name: lvms-operator
       source: redhat-operators
