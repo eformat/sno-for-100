@@ -341,7 +341,7 @@ all() {
     find_region
     generate_dynamodb
 
-#    install_openshift
+    install_openshift
 
     if [ "$OPENSHIFT_VERSION" == "stable" ] || [ $(version "$OPENSHIFT_VERSION") > $(version "4.15.99") ]; then
         adjust_single_node_416
