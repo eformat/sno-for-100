@@ -185,10 +185,37 @@ patch_machine_load_balancers() {
     fi
     ${RUN_DIR}/oc -n openshift-machine-api patch $(${RUN_DIR}/oc -n openshift-machine-api get machine -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
     if [ "$?" != 0 ]; then
-        echo -e "🕱${RED}Failed to patch_machine_load_balancers  ?${NC}"
+        echo -e "🕱${RED}Failed to patch_machine_load_balancers ?${NC}"
         exit 1
     fi
     echo -e "${GREEN} -> patch_machine_load_balancers OK${NC}"
+}
+
+patch_network_load_balancer() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - patch_network_load_balancer - dry run set${NC}"
+        return
+    fi
+    ${RUN_DIR}/oc -n openshift-ingress-operator patch ingresscontroller default --type=merge --patch '
+    apiVersion: operator.openshift.io/v1
+    kind: IngressController
+    metadata:
+      name: default
+      namespace: openshift-ingress-operator
+    spec:
+      endpointPublishingStrategy:
+        loadBalancer:
+          scope: External
+          providerParameters:
+            type: AWS
+            aws:
+              type: NLB
+        type: LoadBalancerService'
+    if [ "$?" != 0 ]; then
+        echo -e "🕱${RED}Failed to patch_network_load_balancer ?${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN} -> patch_network_load_balancer OK${NC}"
 }
 
 wait_for_openshift_api() {
@@ -256,6 +283,7 @@ all() {
         echo -e "${GREEN} -> $instance_id already set on node $node_provider_id, so not redoing it. OK${NC}"
     fi
     patch_machine_load_balancers
+    patch_network_load_balancer
     approve_all_certificates
 }
 
