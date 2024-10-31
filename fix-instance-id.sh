@@ -218,6 +218,36 @@ patch_network_load_balancer() {
     echo -e "${GREEN} -> patch_network_load_balancer OK${NC}"
 }
 
+delete_classic_load_balancers() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - delete_classic_load_balancers - dry run set${NC}"
+        return
+    fi
+    query='LoadBalancers[?VpcId==`'${vpc_id}'`]|[].LoadBalancerName'
+    load_balancers_name=$(aws elbv2 describe-load-balancers --region=${region} \
+    --query $query \
+    --output text)
+    if [ -z "$load_balancers_name" ]; then
+        echo -e "💀${ORANGE}Warning - could not find load balancers by name - continuing, they may have been deleted already ?${NC}"
+        return
+    else
+        echo "🌴 LoadBalancersName set to $load_balancers_name"
+    fi
+    if [ ! -z "$load_balancers_name" ]; then
+        for x in $load_balancers_name; do
+            aws elb delete-load-balancer \
+            --region=${region} \
+            --load-balancer-name $x
+            if [ "$?" != 0 ]; then
+                echo -e "🕱${RED}Failed - could not delete load balancer $x ?${NC}"
+                exit 1
+            else
+                echo -e "${GREEN} -> delete_classic_load_balancers [ $x ] OK${NC}"
+            fi
+        done
+    fi
+}
+
 wait_for_openshift_api() {
     local i=0
     HOST=https://api.${CLUSTER_NAME}.${BASE_DOMAIN}:6443/healthz
@@ -284,6 +314,7 @@ all() {
     fi
     patch_machine_load_balancers
     patch_network_load_balancer
+    delete_classic_load_balancers
     approve_all_certificates
 }
 
