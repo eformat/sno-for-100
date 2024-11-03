@@ -223,8 +223,9 @@ delete_classic_load_balancers() {
         echo -e "${GREEN}Ignoring - delete_classic_load_balancers - dry run set${NC}"
         return
     fi
-    query='LoadBalancers[?VpcId==`'${vpc_id}'`]|[].LoadBalancerName'
-    load_balancers_name=$(aws elbv2 describe-load-balancers --region=${region} \
+    query='LoadBalancerDescriptions[?VPCId==`'${vpc_id}'`]|[].LoadBalancerName'
+    load_balancers_name=$(aws elb describe-load-balancers \
+    --region=${region} \
     --query $query \
     --output text)
     if [ -z "$load_balancers_name" ]; then
