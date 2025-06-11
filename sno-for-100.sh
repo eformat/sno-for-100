@@ -289,11 +289,13 @@ download_ec2_converter() {
     #this avoid issues with multiple python present in the path
     "$SED" -i 's|\#\!/usr/bin/python3|\#\!/usr/bin/env python3|' ${RUN_DIR}/ec2-spot-converter
     chmod u+x ${RUN_DIR}/ec2-spot-converter
-    ret=$(curl --write-out "%{http_code}" https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/requirements.txt -o ${RUN_DIR}/requirements.txt)
-    if [ "$ret" != "200" ]; then
-        echo -e "🕱${RED}Failed - to download ec2-spot-converter requirements file ?.${NC}"
-        return $ret
-    fi
+    #ret=$(curl --write-out "%{http_code}" https://raw.githubusercontent.com/jcjorel/ec2-spot-converter/master/requirements.txt -o ${RUN_DIR}/requirements.txt)
+    #if [ "$ret" != "200" ]; then
+    #    echo -e "🕱${RED}Failed - to download ec2-spot-converter requirements file ?.${NC}"
+    #    return $ret
+    #fi
+    # newer versions break with 
+    echo "boto3==1.36.15" > ${RUN_DIR}/requirements.txt
     pip install --user -r ${RUN_DIR}/requirements.txt
 }
 
