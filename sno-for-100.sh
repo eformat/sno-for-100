@@ -19,6 +19,7 @@ SSH_KEY=${SSH_KEY:-}
 ROOT_VOLUME_SIZE=${ROOT_VOLUME_SIZE:-100}
 INSTANCE_TYPE=${INSTANCE_TYPE:-"m5a.2xlarge"}
 OPENSHIFT_VERSION=${OPENSHIFT_VERSION:-"stable"}
+SKIP_SPOT=${SKIP_SPOT:-}
 # prog vars
 region=
 instance_id=
@@ -221,6 +222,10 @@ ec2_spot_converter() {
     echo "🌴 Running ec2-spot-converter ..."
     if [ -z "$DRYRUN" ]; then
         echo -e "${GREEN}Ignoring - ec2_spot_converter - dry run set${NC}"
+        return
+    fi
+    if [ ! -z "$SKIP_SPOT" ]; then
+        echo -e "${GREEN}Ignoring - ec2_spot_converter - skip spot set${NC}"
         return
     fi
     set -o pipefail
