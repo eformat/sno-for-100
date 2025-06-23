@@ -301,7 +301,7 @@ download_ec2_converter() {
     #fi
     # newer versions break with 
     echo "boto3==1.36.15" > ${RUN_DIR}/requirements.txt
-    pip install --user -r ${RUN_DIR}/requirements.txt
+    pip install -r ${RUN_DIR}/requirements.txt
 }
 
 download_openshift_installer() {
