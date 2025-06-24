@@ -183,7 +183,7 @@ patch_machine_load_balancers() {
         echo -e "${GREEN}Ignoring - patch_machine_load_balancers - dry run set${NC}"
         return
     fi
-    ${RUN_DIR}/oc -n openshift-machine-api patch $(${RUN_DIR}/oc -n openshift-machine-api get machine -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
+    ${RUN_DIR}/oc -n openshift-machine-api patch $(${RUN_DIR}/oc -n openshift-machine-api get machine.machine.openshift.io -l machine.openshift.io/cluster-api-machine-role=master -o name) -p '{"spec":{"providerSpec":{"value": {"loadBalancers" : []}}}}' --type=merge
     if [ "$?" != 0 ]; then
         echo -e "🕱${RED}Failed to patch_machine_load_balancers ?${NC}"
         exit 1
