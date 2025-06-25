@@ -350,6 +350,11 @@ all() {
 
     install_openshift
 
+    if [ ! -z "$SKIP_SPOT" ]; then
+        echo -e "${GREEN}Install complete - skip spot set${NC}"
+        return
+    fi
+
     if [ "$OPENSHIFT_VERSION" == "stable" ] || [ $(version "$OPENSHIFT_VERSION") > $(version "4.15.99") ]; then
         adjust_single_node_416
     else
