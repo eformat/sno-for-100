@@ -178,6 +178,14 @@ delete_node() {
     ${RUN_DIR}/oc delete $(${RUN_DIR}/oc get node -o name)
 }
 
+remove_node_taint() {
+    if [ -z "$DRYRUN" ]; then
+        echo -e "${GREEN}Ignoring - remove_node_taint - dry run set${NC}"
+        return
+    fi
+    ${RUN_DIR}/oc adm taint nodes $(${RUN_DIR}/oc get node -o name) node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule-
+}
+
 patch_machine_load_balancers() {
     if [ -z "$DRYRUN" ]; then
         echo -e "${GREEN}Ignoring - patch_machine_load_balancers - dry run set${NC}"
@@ -313,6 +321,7 @@ all() {
     else
         echo -e "${GREEN} -> $instance_id already set on node $node_provider_id, so not redoing it. OK${NC}"
     fi
+    remove_node_taint
     patch_machine_load_balancers
     patch_network_load_balancer
     delete_classic_load_balancers
