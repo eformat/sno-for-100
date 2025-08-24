@@ -597,7 +597,7 @@ all() {
 
     find_network_load_balancers
     delete_network_load_balancers
-    #delete_target_groups
+    delete_target_groups
 }
 
 usage() {
