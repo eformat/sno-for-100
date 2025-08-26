@@ -167,7 +167,10 @@ update_providerid_on_node() {
         echo -e "${GREEN}Ignoring - update_providerid_on_node - dry run set${NC}"
         return
     fi
+    # pre 4.19
     ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
+    # post 4.19+
+    ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/kubernetes/node.env"
 }
 
 delete_node() {
@@ -176,14 +179,6 @@ delete_node() {
         return
     fi
     ${RUN_DIR}/oc delete $(${RUN_DIR}/oc get node -o name)
-}
-
-remove_node_taint() {
-    if [ -z "$DRYRUN" ]; then
-        echo -e "${GREEN}Ignoring - remove_node_taint - dry run set${NC}"
-        return
-    fi
-    ${RUN_DIR}/oc adm taint nodes $(${RUN_DIR}/oc get node -o name) node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule-
 }
 
 patch_machine_load_balancers() {
@@ -321,7 +316,6 @@ all() {
     else
         echo -e "${GREEN} -> $instance_id already set on node $node_provider_id, so not redoing it. OK${NC}"
     fi
-    remove_node_taint
     patch_machine_load_balancers
     patch_network_load_balancer
     delete_classic_load_balancers
