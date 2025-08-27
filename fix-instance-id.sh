@@ -183,7 +183,7 @@ update_providerid_on_node() {
     # pre 4.19
     ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
     # post 4.19+
-    ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$zone/$instance_id\\\"|\" /etc/kubernetes/node.env"
+    ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$zone/$instance_id|\" /etc/kubernetes/node.env"
 }
 
 delete_node() {
