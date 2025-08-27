@@ -16,6 +16,7 @@ CLUSTER_NAME=${CLUSTER_NAME:-}
 readonly RUN_DIR=$(pwd)
 # prog vars
 region=
+zone=
 instance_id=
 
 find_region() {
@@ -29,6 +30,18 @@ find_region() {
         exit 1
     else
         echo "🌴 Region set to $region"
+    fi
+}
+
+find_zone() {
+    if [ ! -z "$AWS_DEFAULT_ZONES" ]; then
+        zone=$(echo ${AWS_DEFAULT_ZONES} | tr -d '[]')
+    fi
+    if [ -z "$zone" ]; then
+        echo -e "🕱${RED}Failed - could not find aws zone ?${NC}"
+        exit 1
+    else
+        echo "🌴 Zone set to $zone"
     fi
 }
 
@@ -170,7 +183,7 @@ update_providerid_on_node() {
     # pre 4.19
     ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/systemd/system/kubelet.service.d/20-aws-providerid.conf"
     # post 4.19+
-    ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$region/$instance_id\\\"|\" /etc/kubernetes/node.env"
+    ${RUN_DIR}/oc -n default debug -T $(${RUN_DIR}/oc get node -o name) -- chroot /host bash -c "sed -i \"s|aws:///.*|aws:///$zone/$instance_id\\\"|\" /etc/kubernetes/node.env"
 }
 
 delete_node() {
@@ -300,6 +313,7 @@ all() {
     echo "🌴 KUBECONFIG set to $KUBECONFIG"
 
     find_region
+    find_zone
     find_instance_id "$CLUSTER_NAME-*-master-0"
     find_vpc_id "$CLUSTER_NAME-*-vpc"
 
