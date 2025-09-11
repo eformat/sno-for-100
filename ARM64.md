@@ -1,6 +1,6 @@
 # ARM64
 
-You can install arm64 based OpenShift by using an ARM based jumphost.
+You can install arm64 based OpenShift by using an ARM based jumphost (this is the default behavior - see below for overrides).
 
 I used [the instructions from here](https://www.redhat.com/sysadmin/vm-arm64-fedora) to spin up an arm64 based vm on fedora.
 
