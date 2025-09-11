@@ -43,3 +43,10 @@ You can override the install target architecture and jumphost os flavour by dire
 export OS_FLAVOR=linux
 export OS_ARCH=arm64
 ```
+
+For example if running on ARM MAC.OSX but want to install an X86_64 SNO:
+
+```bash
+export OS_FLAVOR=mac
+export OS_ARCH=amd64
+```
