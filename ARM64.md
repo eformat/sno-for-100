@@ -34,3 +34,12 @@ And you should be good to go !
 ```bash
 export INSTANCE_TYPE=m7g.2xlarge
 ```
+
+## Override Architecture
+
+You can override the install target architecture and jumphost os flavour by directly setting:
+
+```bash
+export OS_FLAVOR=linux
+export OS_ARCH=arm64
+```

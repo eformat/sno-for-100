@@ -20,77 +20,77 @@ ROOT_VOLUME_SIZE=${ROOT_VOLUME_SIZE:-100}
 INSTANCE_TYPE=${INSTANCE_TYPE:-"m5a.2xlarge"}
 OPENSHIFT_VERSION=${OPENSHIFT_VERSION:-"stable"}
 SKIP_SPOT=${SKIP_SPOT:-}
+OS_FLAVOR=${OS_FLAVOR:-}
+OS_ARCH=${OS_ARCH:-}
 # prog vars
 region=
 instance_id=
 architecture=
 
 # sanity environment check section
-CYGWIN_ON=no
-MACOS_ON=no
-LINUX_ON=no
 system_os_flavor=linux
 system_os_arch=$(uname -m)
 min_bash_version=4
 
-# - try to detect CYGWIN
-a=$(uname -a) && al=$(echo "$a" | awk '{ print tolower($0); }') && ac=${al%cygwin} && [[ "$al" != "$ac" ]] && CYGWIN_ON=yes
-if [[ "$CYGWIN_ON" == "yes" ]]; then
-  echo "CYGWIN  ${system_os_arch} DETECTED - WILL TRY TO ADJUST PATHS"
-  system_os_flavor=windows
-  min_bash_version=4
+# override OS flavor and architecture if set
+if [ ! -z "$OS_FLAVOR" ] && [ ! -z "$OS_ARCH" ]; then
+  system_os_flavor=$OS_FLAVOR
+  system_os_arch=$OS_ARCH
+else
+    # detect OS flavor
+    uname_s=$(uname | tr '[:upper:]' '[:lower:]')
+    case "$uname_s" in
+    darwin*)
+        system_os_flavor=mac
+        min_bash_version=5
+        echo -e "${ORANGE}\nmacOS ${system_os_arch} DETECTED${NC}\n"
+        ;;
+    cygwin*|msys*|mingw*)
+        system_os_flavor=windows
+        min_bash_version=4
+        echo "CYGWIN/MSYS ${system_os_arch} DETECTED - WILL TRY TO ADJUST PATHS"
+        ;;
+    linux*)
+        system_os_flavor=linux
+        min_bash_version=4
+        ;;
+    esac
+
+    # set architecture for install-config
+    if [[ "$system_os_flavor" == "windows" ]]; then
+        architecture=amd64
+    fi
+    [[ "$system_os_arch" == "x86_64" ]] && architecture=amd64
+    [[ "$system_os_arch" == "aarch64" ]] && architecture=arm64
 fi
 
-# - try to detect MacOS
-a=$(uname) && al=$(echo "$a" | awk '{ print tolower($0); }') && ac=${al%darwin} && [[ "$al" != "$ac" ]] && MACOS_ON=yes
-[[ "$MACOS_ON" == "yes" ]] && system_os_flavor=mac && min_bash_version=5 && echo -e "${ORANGE}\nmacOS ${system_os_arch} DETECTED${NC}\n"
-
-# - try to detect Linux
-a=$(uname) && al=$(echo "$a" | awk '{ print tolower($0); }') && ac=${al%linux} && [[ "$al" != "$ac" ]] && LINUX_ON=yes
-[[ "$LINUX_ON" == "yes" ]] && min_bash_version=4
-
+# bash version check
 bash_version=$(bash -c 'echo ${BASH_VERSINFO[0]}')
-bash_ok=no && [ "${bash_version}" -ge $min_bash_version ] && bash_ok=yes
-[[ "$bash_ok" != "yes" ]] && echo "ERROR: BASH VERSION NOT SUPPORTED - PLEASE UPGRADE YOUR BASH INSTALLATION - ABORTING" && exit 1 
+[ "${bash_version}" -ge $min_bash_version ] || { echo "ERROR: BASH VERSION NOT SUPPORTED - PLEASE UPGRADE YOUR BASH INSTALLATION - ABORTING"; exit 1; }
 
 # sanity check tools
-command -v yq &> /dev/null || { echo >&2 'ERROR: yq not installed. Please install yq tool to continue - Aborting'; exit 1; }
-command -v tar &> /dev/null || { echo >&2 'ERROR: tar not installed. Please install tar tool to continue - Aborting'; exit 1; }
+command -v yq   &> /dev/null || { echo >&2 'ERROR: yq not installed. Please install yq tool to continue - Aborting'; exit 1; }
+command -v tar  &> /dev/null || { echo >&2 'ERROR: tar not installed. Please install tar tool to continue - Aborting'; exit 1; }
 command -v curl &> /dev/null || { echo >&2 'ERROR: curl not installed. Please install curl tool to continue - Aborting'; exit 1; }
 
+# choose sed implementation
 SED='sed'
-if [[ "$MACOS_ON" == "no" ]]; then
-  SED='sed'
-  command -v sed  &> /dev/null      || { echo >&2 'ERROR: sed not installed. Please install sed 4.2 (or later) to continue - Aborting'; exit 1; }
-fi
-
-if [[ "$MACOS_ON" == "yes" ]]; then
-  macshed=no
-  command -v sed  &> /dev/null && SED='sed'  && macshed=yes
-  command -v gsed &> /dev/null && SED='gsed' && macshed=yes
-  [[ "$macshed" == "no" ]] && echo >&2 'ERROR: gsed not installed. Please install GNU sed.4.8 (or later)  to continue - Aborting' && exit 1
-
-  # - check sed version on Mac
-  macstatus=256
-  "$SED" --version &> /dev/null; macstatus=$?
-  if [[ "$macstatus" -eq 0 ]]; then
-    maxv=$("$SED" --version | head -1 | awk '{print $NF}' | cut -d'.' -f 1)
-    minv=$("$SED" --version | head -1 | awk '{print $NF}' | cut -d'.' -f 2)
-    [[ "$maxv" -ge "4" ]] && [[ "$minv" -ge "8" ]] && macsed=yes
-    unset maxv minv
+if [[ "$system_os_flavor" == "mac" ]]; then
+  if command -v gsed &> /dev/null; then
+    SED='gsed'
+  elif command -v sed &> /dev/null && "$SED" --version 2>/dev/null | head -1 | grep -qi 'gnu'; then
+    SED='sed'
   else
-    macshed=no
+    echo >&2 'ERROR: GNU sed not found. Please install gsed (GNU sed 4.8+). Aborting'
+    exit 2
   fi
-  [[ "$macshed" == "yes" ]] || { echo >&2 'ERROR: GNU sed not found. Please install GNU sed.4.8 (or later) to continue - Aborting'; exit 2; }
-  unset macshed macstatus
+else
+  command -v sed &> /dev/null || { echo >&2 'ERROR: sed not installed. Please install sed 4.2 (or later) to continue - Aborting'; exit 1; }
 fi
 
-# set architecture for install-config
-[[ "$CYGWIN_ON" == "yes" ]] && architecture=amd64
-[[ "$system_os_arch" == "x86_64" ]] && architecture=amd64
-[[ "$system_os_arch" == "aarch64" ]] && architecture=arm64
-
-# sanity environment section end
+[ ! -z "$system_os_flavor" ] && echo "🌴 Using system_os_flavor: $system_os_flavor"
+[ ! -z "$system_os_arch" ] && echo "🌴 Using system_os_arch: $system_os_arch"
+# sanity environment check section end
 
 find_region() {
     if [ ! -z "$AWS_DEFAULT_REGION" ]; then
